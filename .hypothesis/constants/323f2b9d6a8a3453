@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\agents\data_sync_agent.py
+# hypothesis_version: 6.148.13
+
+[0.0, 300, 900000, 3600000, '15m', '1h', '5m', '=', 'BTCUSDT', 'BinanceClient', 'RELIANCE-EQ', 'USE_WEBSOCKET', '__main__', 'close', 'coerce', 'false', 'high', 'low', 'ms', 'open', 'open_interest', 'timestamp', 'true', 'volume', '✅ All tests passed']

@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\api\angelone\symbol_mapper.py
+# hypothesis_version: 6.148.13
+
+[0.01, 0.05, 100, 'AMXIDX', 'BFO', 'BSE', 'CDS', 'CE', 'COMMODITY', 'EQ', 'FUT', 'FUTIDX', 'FUTSTK', 'INDEX', 'MCX', 'NFO', 'NSE', 'OPTIDX', 'OPTSTK', 'PE', 'exch_seg', 'expiry', 'instrumenttype', 'lotsize', 'name', 'strike', 'symbol', 'tick_size', 'token']

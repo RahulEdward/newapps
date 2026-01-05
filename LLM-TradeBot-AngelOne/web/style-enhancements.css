@@ -1,0 +1,370 @@
+/* ========================================
+   LLM-TradeBot UI Enhancement Patch
+   Version: 2.0
+   Focus: Glass morphism, animations, interaction experience
+   ======================================== */
+
+/* 1. Enhanced glass morphism effect */
+.glass-panel {
+    background: linear-gradient(135deg,
+            rgba(18, 20, 28, 0.95) 0%,
+            rgba(26, 29, 37, 0.85) 100%);
+    backdrop-filter: blur(30px) saturate(180%);
+    -webkit-backdrop-filter: blur(30px) saturate(180%);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.glass-panel:hover {
+    transform: translateY(-2px);
+    border-color: rgba(99, 102, 241, 0.3);
+    box-shadow:
+        0 12px 48px rgba(0, 0, 0, 0.5),
+        0 0 0 1px rgba(99, 102, 241, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+/* 2. Dynamic background grid */
+body::after {
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image:
+        linear-gradient(rgba(99, 102, 241, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(99, 102, 241, 0.03) 1px, transparent 1px);
+    background-size: 50px 50px;
+    animation: gridMove 20s linear infinite;
+    pointer-events: none;
+    z-index: 0;
+    opacity: 0.5;
+}
+
+@keyframes gridMove {
+    0% {
+        transform: translate(0, 0);
+    }
+
+    100% {
+        transform: translate(50px, 50px);
+    }
+}
+
+/* 3. Table row hover effect - simplified (removed ::before pseudo-element that interfered with column alignment) */
+#decision-table tbody tr,
+#trade-table tbody tr {
+    transition: background 0.2s ease;
+}
+
+#decision-table tbody tr:hover,
+#trade-table tbody tr:hover {
+    background: rgba(99, 102, 241, 0.1);
+}
+
+/* 4. Button ripple effect */
+.btn-control {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-control::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.3);
+    transform: translate(-50%, -50%);
+    transition: width 0.6s, height 0.6s;
+    pointer-events: none;
+}
+
+.btn-control:active::after {
+    width: 200px;
+    height: 200px;
+}
+
+/* 5. Gradient text effect (titles) */
+.card h2 {
+    background: linear-gradient(135deg,
+            #f1f5f9 0%,
+            #6366f1 50%,
+            #8b5cf6 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    background-size: 200% auto;
+}
+
+/* 6. Data update flash effect */
+@keyframes dataUpdate {
+    0% {
+        box-shadow: 0 0 0 0 rgba(0, 214, 143, 0.4);
+    }
+
+    50% {
+        box-shadow: 0 0 20px 10px rgba(0, 214, 143, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(0, 214, 143, 0);
+    }
+}
+
+.status-item.updated {
+    animation: dataUpdate 0.6s ease-out;
+}
+
+/* 7. Badge pulse effect */
+.badge.online,
+.badge.running {
+    position: relative;
+}
+
+.badge.online::before,
+.badge.running::before {
+    content: '';
+    position: absolute;
+    inset: -2px;
+    border-radius: inherit;
+    background: rgba(0, 214, 143, 0.3);
+    animation: badgePulse 2s ease-in-out infinite;
+    z-index: -1;
+}
+
+@keyframes badgePulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.5;
+    }
+
+    50% {
+        transform: scale(1.15);
+        opacity: 0;
+    }
+}
+
+/* 8. Chart container optimization */
+.chart-container-lg {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    padding: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.3);
+    position: relative;
+}
+
+.chart-container-lg::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(99, 102, 241, 0.5),
+            transparent);
+}
+
+/* 9. Improved settings button style */
+.btn-settings-elegant {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-settings-elegant::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.15), transparent);
+    transition: left 0.5s ease;
+}
+
+.btn-settings-elegant:hover::before {
+    left: 100%;
+}
+
+.btn-settings-elegant:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(116, 185, 255, 0.3);
+}
+
+/* 10. Status indicator improvement */
+.status-item {
+    position: relative;
+    overflow: hidden;
+}
+
+.status-item::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg,
+            transparent,
+            rgba(99, 102, 241, 0.5),
+            transparent);
+    transform: translateX(-100%);
+    animation: statusScan 3s ease-in-out infinite;
+}
+
+@keyframes statusScan {
+
+    0%,
+    100% {
+        transform: translateX(-100%);
+    }
+
+    50% {
+        transform: translateX(100%);
+    }
+}
+
+/* 11. Logo floating effect */
+.logo .icon {
+    animation: logoFloat 3s ease-in-out infinite;
+}
+
+@keyframes logoFloat {
+
+    0%,
+    100% {
+        transform: translateY(0px);
+    }
+
+    50% {
+        transform: translateY(-5px);
+    }
+}
+
+/* 12. Scrollbar beautification */
+.table-container::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.table-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 5px;
+}
+
+.table-container::-webkit-scrollbar-thumb {
+    background: linear-gradient(180deg, #6366f1, #8b5cf6);
+    border-radius: 5px;
+    border: 2px solid rgba(0, 0, 0, 0.2);
+}
+
+.table-container::-webkit-scrollbar-thumb:hover {
+    background: linear-gradient(180deg, #8b5cf6, #6366f1);
+}
+
+/* 13. Input focus effect */
+input:focus,
+select:focus,
+textarea:focus {
+    outline: none;
+    border-color: #6366f1 !important;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1) !important;
+}
+
+/* 14. Modal animation */
+.modal-overlay {
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
+}
+
+.settings-modal {
+    animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(50px);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+/* 15. Value color enhancement */
+.val.pos {
+    color: #00ff9d;
+    text-shadow: 0 0 10px rgba(0, 255, 157, 0.3);
+}
+
+.val.neg {
+    color: #ff4757;
+    text-shadow: 0 0 10px rgba(255, 71, 87, 0.3);
+}
+
+/* 16. Loading state */
+@keyframes shimmer {
+    0% {
+        background-position: -1000px 0;
+    }
+
+    100% {
+        background-position: 1000px 0;
+    }
+}
+
+.loading {
+    background: linear-gradient(90deg,
+            rgba(255, 255, 255, 0.05) 0%,
+            rgba(255, 255, 255, 0.1) 50%,
+            rgba(255, 255, 255, 0.05) 100%);
+    background-size: 1000px 100%;
+    animation: shimmer 2s infinite;
+}
+
+/* 17. Performance optimization hints */
+.glass-panel,
+.btn-control,
+.status-item {
+    will-change: transform;
+}
+
+/* 18. Responsive optimization */
+@media (max-width: 768px) {
+    .glass-panel:hover {
+        transform: none;
+        /* Disable hover effect on mobile */
+    }
+
+    body::after {
+        display: none;
+        /* Disable background grid on mobile */
+    }
+}
+
+/* 19. Print style optimization */
+@media print {
+    .glass-panel {
+        background: white !important;
+        border: 1px solid #ccc !important;
+        box-shadow: none !important;
+    }
+}

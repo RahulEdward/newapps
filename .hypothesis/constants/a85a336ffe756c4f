@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\api\angelone\auth_manager.py
+# hypothesis_version: 6.148.13
+
+[300, 'AUTH_001', 'AUTH_002', 'AUTH_003', 'AUTH_004', 'AUTH_005', 'Login successful', 'Unknown error', 'api_key', 'client_code', 'data', 'getfeedToken', 'jwtToken', 'last_error', 'message', 'missing_fields', 'password', 'refreshToken', 'response', 'status', 'totp_secret']

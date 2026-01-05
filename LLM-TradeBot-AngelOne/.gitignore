@@ -1,0 +1,103 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Virtual Environment
+venv/
+venv311/
+ENV/
+env/
+
+# Sensitive Configuration
+config.yaml
+.env
+.env.local
+.env.production
+config/accounts.json
+*.key
+*.pem
+*.secret
+
+# Log Files
+logs/
+logs/**/*
+*.log
+
+# Data Directories
+data/
+data/**/*
+!data/README.md
+!data/.gitkeep
+
+# Database Files
+*.db
+*.sqlite
+*.sqlite3
+
+# Data Files
+*.csv
+*.parquet
+*.json
+!config/*.example.json
+!.env.example
+!package.json
+!package-lock.json
+!tsconfig.json
+
+# Model Files
+models/
+models/**/*
+*.pkl
+*.h5
+*.pt
+*.pth
+*.onnx
+
+# Backups and Archives
+backups/
+archived_files_*/
+*.backup
+*.bak
+CLEANUP_PREVIEW.md
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Cache
+.cache/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# macOS
+.DS_Store
+
+# Temporary Files
+*.tmp
+*.temp
+tmp/
+
+# Development folders (not for production)
+nofx-dev/

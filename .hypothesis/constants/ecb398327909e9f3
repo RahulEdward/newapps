@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\agents\position_analyzer.py
+# hypothesis_version: 6.148.13
+
+[50.0, 100, 288, 87000, '15m', '1h', '2025-01-01', '5m', '5min', '__main__', 'allow_long', 'allow_short', 'close', 'excellent', 'good', 'high', 'location', 'low', 'lower', 'middle', 'poor', 'position_pct', 'quality', 'range_high', 'range_low', 'range_size', 'reason', 'resistance', 'support', 'terrible', 'timestamp', 'upper', '中上部', '中下部', '优秀', '位置分析测试:\n', '区间中部', '接近支撑', '接近阻力', '支撑位附近', '极差', '良好', '较差', '阻力位附近']

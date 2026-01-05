@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\api\angelone\websocket_manager.py
+# hypothesis_version: 6.148.13
+
+[100, 1000, 'Already connected', 'BFO', 'BSE', 'CDS', 'Heartbeat received', 'MCX', 'NFO', 'NSE', 'WebSocket connected', 'close', 'connected', 'connecting', 'disconnected', 'error', 'exchange', 'heartbeat', 'high', 'low', 'ltp', 'mode', 'open', 'reconnecting', 'token', 'type', 'volume']

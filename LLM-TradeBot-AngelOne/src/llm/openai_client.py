@@ -1,8 +1,8 @@
 """
-OpenAI 客户端实现
-================
+OpenAI Client Implementation
+============================
 
-支持 OpenAI API 及所有兼容 OpenAI API 格式的提供商。
+Supports OpenAI API and all providers compatible with OpenAI API format.
 """
 
 from typing import Dict, Any, List
@@ -11,9 +11,9 @@ from .base import BaseLLMClient, LLMConfig, ChatMessage, LLMResponse
 
 class OpenAIClient(BaseLLMClient):
     """
-    OpenAI 客户端
+    OpenAI Client
     
-    也可作为兼容 OpenAI API 的其他提供商的基类。
+    Can also serve as base class for other providers compatible with OpenAI API.
     """
     
     DEFAULT_BASE_URL = "https://api.openai.com/v1"
@@ -21,7 +21,7 @@ class OpenAIClient(BaseLLMClient):
     PROVIDER = "openai"
     
     def _build_headers(self) -> Dict[str, str]:
-        """构建 OpenAI 认证头"""
+        """Build OpenAI authentication headers"""
         return {
             "Authorization": f"Bearer {self.config.api_key}",
             "Content-Type": "application/json"
@@ -32,7 +32,7 @@ class OpenAIClient(BaseLLMClient):
         messages: List[ChatMessage],
         **kwargs
     ) -> Dict[str, Any]:
-        """构建 OpenAI 请求体"""
+        """Build OpenAI request body"""
         return {
             "model": self.model,
             "messages": self._messages_to_list(messages),
@@ -41,7 +41,7 @@ class OpenAIClient(BaseLLMClient):
         }
     
     def _parse_response(self, response: Dict[str, Any]) -> LLMResponse:
-        """解析 OpenAI 响应"""
+        """Parse OpenAI response"""
         choice = response.get("choices", [{}])[0]
         message = choice.get("message", {})
         

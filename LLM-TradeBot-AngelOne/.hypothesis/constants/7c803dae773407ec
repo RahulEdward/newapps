@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\llm\claude_client.py
+# hypothesis_version: 6.149.1
+
+[0.1, '2023-06-01', 'Content-Type', 'anthropic-version', 'application/json', 'claude', 'content', 'max_tokens', 'messages', 'model', 'role', 'system', 'temperature', 'text', 'type', 'usage', 'x-api-key']

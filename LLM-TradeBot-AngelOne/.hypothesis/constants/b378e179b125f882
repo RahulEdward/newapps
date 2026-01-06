@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\api\angelone\config_manager.py
+# hypothesis_version: 6.149.1
+
+[2.0, 20.0, 10000.0, 100000.0, 100, '${', '***', '09:00', '09:15', '15:30', 'ANGELONE_API_KEY', 'ANGELONE_CLIENT_CODE', 'ANGELONE_PASSWORD', 'ANGELONE_TOTP_SECRET', 'BFO', 'BSE', 'CDS', 'INFO', 'MCX', 'Must be a number', 'Must be an integer', 'NFO', 'NSE', 'api_key', 'backtest_end_date', 'backtest_start_date', 'brokerage_per_trade', 'client_code', 'config.yaml', 'default_exchange', 'file', 'initial_capital', 'log_file', 'log_level', 'market_close', 'market_open', 'max_daily_loss', 'max_position_size', 'password', 'pre_market_start', 'r', 'required_fields', 'stop_loss_percent', 'symbols', 'totp_secret', 'utf-8', 'w', 'websocket_enabled', 'websocket_reconnect', 'yaml', '}']

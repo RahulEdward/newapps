@@ -1,8 +1,8 @@
 """
-LLM 策略推理引擎 (Multi-Provider Support)
+LLM Strategy Reasoning Engine (Multi-Provider Support)
 =========================================
 
-支持多种 LLM 提供商: OpenAI, DeepSeek, Claude, Qwen, Gemini
+Supports multiple LLM providers: OpenAI, DeepSeek, Claude, Qwen, Gemini
 """
 import json
 import re
@@ -54,7 +54,7 @@ def _extract_json_robust(text: str) -> Optional[Dict]:
 
 
 class StrategyEngine:
-    """多 LLM 提供商策略决策引擎"""
+    """Multi-LLM Provider Strategy Decision Engine"""
     
     def __init__(self):
         # 获取 LLM 配置
@@ -124,15 +124,15 @@ class StrategyEngine:
     
     def make_decision(self, market_context_text: str, market_context_data: Dict, reflection: str = None) -> Dict:
         """
-        基于市场上下文做出交易决策
+        Make trading decision based on market context
         
         Args:
-            market_context_text: 格式化的市场上下文文本
-            market_context_data: 原始市场数据
-            reflection: 可选的交易反思文本（来自 ReflectionAgent）
+            market_context_text: Formatted market context text
+            market_context_data: Raw market data
+            reflection: Optional trading reflection text (from ReflectionAgent)
             
         Returns:
-            决策结果字典
+            Decision result dictionary
         """
         # Ensure client is initialized
         if not self.is_ready:
@@ -161,8 +161,8 @@ class StrategyEngine:
         system_prompt = self._build_system_prompt()
         user_prompt = self._build_user_prompt(market_context_text, bull_perspective, bear_perspective, reflection)
         
-        # 记录 LLM 输入
-        log.llm_input(f"正在发送市场数据到 {self.provider}...", market_context_text)
+        # Record LLM input
+        log.llm_input(f"Sending market data to {self.provider}...", market_context_text)
 
         
         try:
@@ -173,31 +173,31 @@ class StrategyEngine:
                 max_tokens=self.max_tokens
             )
             
-            # 获取原始响应
+            # Get raw response
             content = response.content
             
-            # 使用新解析器解析结构化输出
+            # Use new parser to parse structured output
             parsed = self.parser.parse(content)
             decision = parsed['decision']
             reasoning = parsed['reasoning']
             
-            # 标准化 action 字段
+            # Normalize action field
             if 'action' in decision:
                 decision['action'] = self.parser.normalize_action(decision['action'])
             
-            # 验证决策
+            # Validate decision
             is_valid, errors = self.validator.validate(decision)
             if not is_valid:
-                log.warning(f"LLM 决策验证失败: {errors}")
-                log.warning(f"原始决策: {decision}")
+                log.warning(f"LLM decision validation failed: {errors}")
+                log.warning(f"Original decision: {decision}")
                 return self._get_fallback_decision(market_context_data)
             
-            # 记录 LLM 输出
-            log.llm_output(f"{self.provider} 返回决策结果", decision)
+            # Record LLM output
+            log.llm_output(f"{self.provider} returned decision result", decision)
             if reasoning:
-                log.info(f"推理过程:\n{reasoning}")
+                log.info(f"Reasoning process:\n{reasoning}")
             
-            # 记录决策
+            # Record decision
             log.llm_decision(
                 action=decision.get('action', 'hold'),
                 confidence=decision.get('confidence', 0),
@@ -413,9 +413,9 @@ Analyze the above data following the strategy rules in system prompt. Output you
     
     def _get_fallback_decision(self, context: Dict) -> Dict:
         """
-        获取兜底决策（当LLM失败时）
+        Get fallback decision (when LLM fails)
         
-        返回保守的hold决策
+        Returns conservative hold decision
         """
         return {
             'action': 'wait',
@@ -432,7 +432,7 @@ Analyze the above data following the strategy rules in system prompt. Output you
     
     def validate_decision(self, decision: Dict) -> bool:
         """
-        验证决策格式是否正确
+        Validate decision format is correct
         
         Returns:
             True if valid, False otherwise
@@ -442,24 +442,24 @@ Analyze the above data following the strategy rules in system prompt. Output you
             'position_size_pct', 'stop_loss_pct', 'take_profit_pct', 'reasoning'
         ]
         
-        # 检查必需字段
+        # Check required fields
         for field in required_fields:
             if field not in decision:
-                log.error(f"决策缺少必需字段: {field}")
+                log.error(f"Decision missing required field: {field}")
                 return False
         
-        # 检查action合法性
+        # Check action validity
         valid_actions = [
             'open_long', 'open_short', 'close_position',
             'add_position', 'reduce_position', 'hold'
         ]
         if decision['action'] not in valid_actions:
-            log.error(f"无效的action: {decision['action']}")
+            log.error(f"Invalid action: {decision['action']}")
             return False
         
-        # 检查数值范围
+        # Check numeric ranges
         if not (0 <= decision['confidence'] <= 100):
-            log.error(f"confidence超出范围: {decision['confidence']}")
+            log.error(f"confidence out of range: {decision['confidence']}")
             return False
         
         # STRICT ENFORCEMENT: Open trades must meet Dynamic Confidence Threshold
@@ -493,11 +493,11 @@ Analyze the above data following the strategy rules in system prompt. Output you
             decision['reasoning'] = f"Low confidence ({confidence}% < {regime_threshold}% dynamic threshold), wait for better setup"
         
         if not (1 <= decision['leverage'] <= config.risk.get('max_leverage', 5)):
-            log.error(f"leverage超出范围: {decision['leverage']}")
+            log.error(f"leverage out of range: {decision['leverage']}")
             return False
         
         if not (0 <= decision['position_size_pct'] <= 100):
-            log.error(f"position_size_pct超出范围: {decision['position_size_pct']}")
+            log.error(f"position_size_pct out of range: {decision['position_size_pct']}")
             return False
         
         return True

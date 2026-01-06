@@ -17,7 +17,12 @@ import pandas as pd
 import numpy as np
 import os
 
-from src.api.binance_client import BinanceClient
+# Use AngelOne client for Indian market data
+try:
+    from src.api.angelone.angelone_client import AngelOneClient
+except ImportError:
+    AngelOneClient = None
+
 from src.agents.data_sync_agent import MarketSnapshot
 from src.utils.logger import log
 
@@ -48,7 +53,7 @@ class DataReplayAgent:
     Historical Data Replay Agent
     
     Features:
-    1. Fetch historical K-line data from Binance
+    1. Fetch historical K-line data from AngelOne
     2. Local cache (Parquet format)
     3. Generate MarketSnapshot at specified time points
     4. Simulate real-time data stream for backtesting
@@ -61,16 +66,16 @@ class DataReplayAgent:
         symbol: str,
         start_date: str,
         end_date: str,
-        client: BinanceClient = None
+        client: 'AngelOneClient' = None
     ):
         """
         Initialize data replay agent
         
         Args:
-            symbol: Trading pair (e.g., "BTCUSDT")
+            symbol: Trading symbol (e.g., "RELIANCE")
             start_date: Start date "YYYY-MM-DD" or "YYYY-MM-DD HH:MM"
             end_date: End date "YYYY-MM-DD" or "YYYY-MM-DD HH:MM"
-            client: Binance client (optional)
+            client: AngelOne client (optional)
         """
         self.symbol = symbol
         
@@ -88,7 +93,7 @@ class DataReplayAgent:
             dt = datetime.strptime(end_date, "%Y-%m-%d")
             self.end_date = dt + timedelta(days=1)
             
-        self.client = client or BinanceClient()
+        self.client = client
         
         # Data cache
         self.data_cache: Optional[DataCache] = None
@@ -129,7 +134,7 @@ class DataReplayAgent:
                 log.warning(f"Cache load failed: {e}, fetching from API...")
         
         # Fetch from API
-        log.info(f"📥 Fetching historical data from Binance API...")
+        log.info(f"📥 Fetching historical data from AngelOne API...")
         try:
             await self._fetch_from_api()
             # Save to cache
@@ -163,7 +168,7 @@ class DataReplayAgent:
         )
     
     async def _fetch_from_api(self):
-        """Fetch historical data from Binance API"""
+        """Fetch historical data from AngelOne API"""
         # CRITICAL FIX: Need historical data BEFORE backtest period for technical indicators
         # Add lookback period (default 30 days) before start_date
         lookback_days = 30
@@ -183,20 +188,29 @@ class DataReplayAgent:
         log.info(f"📊 Fetching data from {extended_start.date()} to {self.end_date.date()}")
         log.info(f"   Lookback: {lookback_days} days before backtest start")
         
-        # Binance API limits to 1500 per request, need to fetch in batches
-        df_5m = await self._fetch_klines_batched("5m", limit_5m)
-        df_15m = await self._fetch_klines_batched("15m", limit_15m)
-        df_1h = await self._fetch_klines_batched("1h", limit_1h)
+        # Fetch data using AngelOne client
+        if self.client:
+            df_5m = await self._fetch_klines_angelone("FIVE_MINUTE", extended_start, self.end_date)
+            df_15m = await self._fetch_klines_angelone("FIFTEEN_MINUTE", extended_start, self.end_date)
+            df_1h = await self._fetch_klines_angelone("ONE_HOUR", extended_start, self.end_date)
+        else:
+            # Fallback to empty dataframes if no client
+            df_5m = pd.DataFrame()
+            df_15m = pd.DataFrame()
+            df_1h = pd.DataFrame()
         
-        # Fetch funding rate history
-        funding_rates = await self._fetch_funding_rates()
+        # No funding rates in Indian market (equity/derivatives)
+        funding_rates = []
         
         # IMPORTANT: Do NOT filter out historical data before start_date here
         # We need it for technical indicator calculation
         # Only filter data AFTER end_date
-        df_5m = df_5m[df_5m.index <= self.end_date]
-        df_15m = df_15m[df_15m.index <= self.end_date]
-        df_1h = df_1h[df_1h.index <= self.end_date]
+        if not df_5m.empty:
+            df_5m = df_5m[df_5m.index <= self.end_date]
+        if not df_15m.empty:
+            df_15m = df_15m[df_15m.index <= self.end_date]
+        if not df_1h.empty:
+            df_1h = df_1h[df_1h.index <= self.end_date]
         
         # Create cache object
         self.data_cache = DataCache(
@@ -210,7 +224,7 @@ class DataReplayAgent:
         )
         
         # Generate timestamp list (based on 5m K-lines)
-        all_timestamps = df_5m.index.tolist()
+        all_timestamps = df_5m.index.tolist() if not df_5m.empty else []
         
         # Filter timestamps to backtest period only
         # Strict inequality for end_date to avoid processing the exact end second if not in data
@@ -220,96 +234,55 @@ class DataReplayAgent:
         if self.timestamps:
             log.info(f"   First: {self.timestamps[0]}, Last: {self.timestamps[-1]}")
     
-    async def _fetch_funding_rates(self) -> List[FundingRateRecord]:
-        """Fetch funding rate historical data"""
-        funding_records = []
+    async def _fetch_klines_angelone(self, interval: str, start: datetime, end: datetime) -> pd.DataFrame:
+        """Fetch K-line data from AngelOne API"""
+        if not self.client:
+            return pd.DataFrame()
         
         try:
-            # Calculate time range
-            start_ts = int(self.start_date.timestamp() * 1000)
-            end_ts = int(self.end_date.timestamp() * 1000)
+            # Use AngelOne client's get_klines method
+            klines = await self.client.get_klines(
+                symbol=self.symbol,
+                interval=interval,
+                from_date=start.strftime("%Y-%m-%d %H:%M"),
+                to_date=end.strftime("%Y-%m-%d %H:%M")
+            )
             
-            # Binance API returns max 1000 records per request
-            current_start = start_ts
+            if not klines:
+                return pd.DataFrame()
             
-            # Safety break
-            loop_count = 0
-            while current_start < end_ts and loop_count < 100:
-                loop_count += 1
-                funding_data = self.client.client.futures_funding_rate(
-                    symbol=self.symbol,
-                    startTime=current_start,
-                    endTime=end_ts,
-                    limit=1000
-                )
-                
-                if not funding_data:
-                    break
-                
-                for record in funding_data:
-                    fr = FundingRateRecord(
-                        timestamp=datetime.fromtimestamp(record['fundingTime'] / 1000),
-                        funding_rate=float(record['fundingRate']),
-                        mark_price=float(record.get('markPrice', 0))
-                    )
-                    funding_records.append(fr)
-                
-                if len(funding_data) < 1000:
-                    break
-                
-                # Next batch starts from last record time + 1
-                current_start = funding_data[-1]['fundingTime'] + 1
-                await asyncio.sleep(0.1)  # Avoid too fast requests
-            
-            log.info(f"📊 Fetched {len(funding_records)} funding rate records")
+            # Convert to DataFrame
+            return self._klines_to_dataframe(klines)
             
         except Exception as e:
-            log.warning(f"⚠️ Failed to fetch funding rates: {e}")
-        
-        return funding_records
+            log.warning(f"Failed to fetch {interval} data: {e}")
+            return pd.DataFrame()
+    
+    async def _fetch_funding_rates(self) -> List[FundingRateRecord]:
+        """
+        Fetch funding rate historical data
+        Note: Indian equity market doesn't have funding rates like crypto futures
+        This method is kept for compatibility but returns empty list
+        """
+        # Indian market doesn't have funding rates
+        return []
     
     async def _fetch_klines_batched(self, interval: str, total_limit: int) -> pd.DataFrame:
-        """Fetch K-line data in batches"""
-        all_klines = []
-        batch_size = 1000  # Binance recommended batch size
+        """Fetch K-line data in batches - legacy method for compatibility"""
+        # Map old interval format to AngelOne format
+        interval_map = {
+            "5m": "FIVE_MINUTE",
+            "15m": "FIFTEEN_MINUTE",
+            "1h": "ONE_HOUR",
+            "1d": "ONE_DAY"
+        }
+        angelone_interval = interval_map.get(interval, "FIVE_MINUTE")
         
-        # Calculate end timestamp
-        end_ts = int(self.end_date.timestamp() * 1000)
+        # Calculate date range
+        lookback_days = 30
+        extended_start = self.start_date - timedelta(days=lookback_days)
         
-        remaining = total_limit
-        current_end = end_ts
-        loop_count = 0
-        
-        while remaining > 0 and loop_count < 200: # Safety break
-            loop_count += 1
-            limit = min(batch_size, remaining)
-            
-            try:
-                klines = self.client.client.futures_klines(
-                    symbol=self.symbol,
-                    interval=interval,
-                    endTime=current_end,
-                    limit=limit
-                )
-                
-                if not klines:
-                    break
-                
-                all_klines = klines + all_klines  # Insert in reverse order
-                
-                # Update next batch end time (earliest candle start time - 1)
-                current_end = klines[0][0] - 1
-                remaining -= len(klines)
-                
-                # Avoid too fast requests
-                await asyncio.sleep(0.1)
-                
-            except Exception as e:
-                log.warning(f"Batch fetch error: {e}")
-                break
-        
-        # Convert to DataFrame
-        return self._klines_to_dataframe(all_klines)
+        return await self._fetch_klines_angelone(angelone_interval, extended_start, self.end_date)
     
     def _klines_to_dataframe(self, klines: List) -> pd.DataFrame:
         """Convert K-line list to DataFrame"""
@@ -545,14 +518,10 @@ class DataReplayAgent:
         """
         Check if it's funding rate settlement time
         
-        Binance futures funding rate settlement times: UTC 00:00, 08:00, 16:00
+        Note: Indian equity market doesn't have funding rate settlements like crypto
+        This method is kept for compatibility but always returns False
         """
-        utc_hour = (timestamp.hour - 8) % 24  # Assuming local timezone is UTC+8
-        utc_minute = timestamp.minute
-        
-        # Check if it's settlement time (allow a few minutes tolerance)
-        if utc_hour in [0, 8, 16] and utc_minute < 10:
-            return True
+        # Indian market doesn't have funding rate settlements
         return False
     
     def get_funding_rate_for_settlement(self, timestamp: datetime) -> Optional[float]:
@@ -609,7 +578,7 @@ async def test_data_replay():
     
     # Create replay agent (test 7 days of data)
     replay = DataReplayAgent(
-        symbol="BTCUSDT",
+        symbol="RELIANCE",
         start_date="2024-12-01",
         end_date="2024-12-07"
     )
@@ -626,7 +595,7 @@ async def test_data_replay():
                 break
             snapshot = replay.get_snapshot_at(ts)
             price = replay.get_current_price()
-            print(f"   {i+1}. {ts} | Price: ${price:.2f}")
+            print(f"   {i+1}. {ts} | Price: ₹{price:.2f}")
         
         # Show progress
         current, total, pct = replay.get_progress()

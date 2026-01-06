@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\agents\position_analyzer.py
+# hypothesis_version: 6.149.1
+
+[50.0, 100, 288, 87000, '15m', '1h', '2025-01-01', '5m', '5min', 'Middle zone', 'Near resistance', 'Near support', '__main__', 'allow_long', 'allow_short', 'close', 'excellent', 'good', 'high', 'location', 'low', 'lower', 'lower zone', 'middle', 'middle zone', 'near resistance', 'near support', 'poor', 'position_pct', 'quality', 'range_high', 'range_low', 'range_size', 'reason', 'resistance', 'support', 'terrible', 'timestamp', 'upper', 'upper zone']

@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\data\kline_validator.py
+# hypothesis_version: 6.149.1
+
+[0.001, 10000000, 'Integrity-Check-Only', 'action', 'action_taken', 'by_severity', 'by_type', 'clean', 'cleaned', 'close', 'critical', 'duplicate_timestamp', 'empty', 'field', 'fields', 'first_occurrence', 'high', 'index', 'info', 'invalid_value', 'issues', 'issues_found', 'low', 'method', 'missing_fields', 'n_cleaned', 'n_original', 'negative_volume', 'none', 'ohlc', 'ohlc_logic_violation', 'open', 'prev_timestamp', 'price_out_of_range', 'range', 'remove', 'removed_count', 'severity', 'status', 'time_not_monotonic', 'timestamp', 'total_issues', 'type', 'unknown', 'value', 'violations', 'volume', 'warning']

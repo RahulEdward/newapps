@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\agents\setup_agent.py
+# hypothesis_version: 6.149.1
+
+[0.3, 300, 'ABOVE MIDDLE BAND', 'ABOVE_MID', 'BEARISH', 'BELOW MIDDLE BAND', 'BELOW_MID', 'BULLISH', 'ERROR', 'GOOD_ENTRY', 'MONITOR', 'NEUTRAL', 'OVERBOUGHT', 'OVERBOUGHT (J > 80)', 'OVERSOLD', 'OVERSOLD (J < 20)', 'PULLBACK_ZONE', 'RALLY ZONE (J > 50)', 'RALLY_ZONE', 'UNKNOWN', 'WAIT', 'analysis', 'api_key', 'api_keys', 'base_url', 'bb_lower', 'bb_middle', 'bb_position', 'bb_upper', 'close_15m', 'current_cycle_id', 'deepseek', 'deepseek-chat', 'dummy-key-will-fail', 'error', 'kdj_j', 'kdj_k', 'long', 'macd_diff', 'macd_signal', 'metadata', 'model', 'neutral', 'provider', 'saver', 'short', 'stance', 'symbol', 'trend', 'trend_direction', 'zone']

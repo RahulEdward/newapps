@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\agents\risk_audit_agent.py
+# hypothesis_version: 6.149.1
+
+[0.005, 0.01, 0.02, 0.05, 0.3, 0.5, 0.7, 0.75, 0.95, 1.0, 1.5, 2.0, 5.0, 10.0, 100.0, 10000.0, 98000.0, 99000.0, 99500.0, 100000.0, 100500.0, 101000.0, -1000, 100, 1000, '\n5️⃣ Audit Report...', '=', 'BLOCKED', 'BTCUSDT', 'Observing', 'PASSED', '__main__', 'action', 'block_breakdown', 'block_rate', 'blocked', 'can_fix', 'choppy', 'close_long', 'close_short', 'confidence', 'corrected_value', 'corrections', 'danger', 'decision', 'entry_price', 'fatal', 'hold', 'leverage', 'location', 'long', 'middle', 'open_long', 'open_short', 'over_leverage_blocks', 'passed', 'position', 'position_pct', 'quantity', 'reason', 'recent_logs', 'regime', 'required_margin', 'result', 'safe', 'short', 'stop_loss', 'take_profit', 'timestamp', 'total_blocks', 'total_checks', 'unknown', 'volatile', 'warning', 'warnings']

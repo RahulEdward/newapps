@@ -2,12 +2,17 @@
 import asyncio
 import json
 import pytest
-from fastapi.testclient import TestClient
+from unittest.mock import MagicMock, AsyncMock, patch
+
+# Try to import TestClient - handle different versions
+try:
+    from starlette.testclient import TestClient
+except ImportError:
+    from fastapi.testclient import TestClient
+
 from src.server.app import app
 from src.backtest.engine import BacktestConfig
 
-# Mock the engine run to avoid actual computation time
-from unittest.mock import MagicMock, AsyncMock, patch
 
 @pytest.mark.asyncio
 def test_backtest_stream_endpoint():
@@ -28,7 +33,12 @@ def test_backtest_stream_endpoint():
     # However, for an integration test, we can just run a very short backtest if we can't mock easily.
     # Let's try to run a real request but very short duration.
     
-    client = TestClient(app)
+    # Create TestClient - handle different API versions
+    try:
+        client = TestClient(app, raise_server_exceptions=False)
+    except TypeError:
+        # Older version doesn't support raise_server_exceptions
+        client = TestClient(app)
     
     # Needs auth? The endpoint has `Depends(verify_auth)`.
     # We might need to mock verify_auth or provide a token.

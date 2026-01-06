@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\agents\trigger_agent.py
+# hypothesis_version: 6.149.1
+
+[0.3, 1.0, 1.2, 1.5, 1.8, 300, 'BREAKOUT', 'CONFIRMED', 'ERROR', 'NO', 'NO PATTERN DETECTED', 'NONE', 'NO_SIGNAL', 'None', 'PATTERN_DETECTED', 'UNKNOWN', 'VOLUME_SIGNAL', 'WAITING', 'analysis', 'api_key', 'api_keys', 'base_url', 'current_cycle_id', 'deepseek', 'deepseek-chat', 'dummy-key-will-fail', 'error', 'metadata', 'model', 'neutral', 'pattern', 'pattern_type', 'provider', 'rvol', 'saver', 'stance', 'status', 'symbol', 'trend_direction', 'trigger_pattern', 'trigger_rvol', 'volume_breakout']

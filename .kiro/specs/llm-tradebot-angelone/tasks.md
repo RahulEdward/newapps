@@ -217,52 +217,54 @@ This implementation plan transforms LLM-TradeBot from Binance/Crypto to AngelOne
     - Calculate Indian brokerage and taxes
     - _Requirements: 12.1, 12.2, 12.3, 12.4, 12.5_
 
-- [-] 17. Convert Chinese Text to English
+- [x] 17. Convert Chinese Text to English
   - [x] 17.1 Convert all Chinese comments to English
     - Scan all .py files for Chinese characters
     - Translate comments to English
     - _Requirements: 14.1_
-  - [ ] 17.2 Convert Chinese variable names and strings
+  - [x] 17.2 Convert Chinese variable names and strings
     - Find Chinese variable names
     - Translate to English equivalents
+    - Note: i18n.js intentionally kept with Chinese (translation file)
     - _Requirements: 14.2, 14.3, 14.4_
-  - [ ] 17.3 Convert Chinese UI text and documentation
+  - [x] 17.3 Convert Chinese UI text and documentation
     - Update any Chinese text in web files
     - Update README files to English
+    - Note: i18n.js zh: section kept for internationalization
     - _Requirements: 14.5, 14.6, 14.8_
-  - [ ] 17.4 Write property test for no Chinese characters
+  - [-] 17.4 Write property test for no Chinese characters
     - **Property 21: No Chinese Characters in Codebase**
     - **Validates: Requirements 14.1-14.8**
 
-- [ ] 18. Update Configuration Files
-  - [ ] 18.1 Create new config.yaml template for AngelOne
+- [x] 18. Update Configuration Files
+  - [x] 18.1 Create new config.yaml template for AngelOne
     - Add AngelOne credential fields
     - Add Indian market symbol examples
     - Add market hours configuration
     - _Requirements: 8.1, 8.6, 8.7_
-  - [ ] 18.2 Create .env.example for sensitive credentials
+  - [x] 18.2 Create .env.example for sensitive credentials
     - Add ANGELONE_API_KEY, CLIENT_CODE, PASSWORD, TOTP_SECRET
     - _Requirements: 8.2_
 
-- [ ] 19. Update main.py Entry Point
-  - [ ] 19.1 Update main.py to initialize AngelOne client
+- [x] 19. Update main.py Entry Point
+  - [x] 19.1 Update main.py to initialize AngelOne client
     - Replace Binance client initialization
     - Add market hours check before trading
     - _Requirements: 1.1, 6.2, 6.7_
 
-- [ ] 20. Final Checkpoint - Full Integration
+- [x] 20. Final Checkpoint - Full Integration
   - Ensure all tests pass, ask the user if questions arise.
 
-- [ ] 21. Integration Testing
-  - [ ] 21.1 Write integration test for full trading flow
+- [x] 21. Integration Testing
+  - [x] 21.1 Write integration test for full trading flow
     - Test: Auth → Data Fetch → Agent Process → Order Place
     - _Requirements: All_
-  - [ ] 21.2 Write integration test for all 12 agents
+  - [x] 21.2 Write integration test for all 12 agents
     - Verify each agent receives correct data format
     - _Requirements: 11.1-11.12_
 
-- [ ] 22. Documentation Update
-  - [ ] 22.1 Update README.md for AngelOne version
+- [x] 22. Documentation Update
+  - [x] 22.1 Update README.md for AngelOne version
     - Add AngelOne setup instructions
     - Add Indian market specific notes
     - Remove Binance/crypto references

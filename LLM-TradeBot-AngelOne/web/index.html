@@ -24,21 +24,7 @@
                     <h1>LLM-TradeBot</h1>
                     <span class="tagline">Adversarial Decision Framework</span>
                 </div>
-                <div class="social-links">
-                    <a href="https://github.com/EthanAlgoX/LLM-TradeBot" target="_blank" title="GitHub"
-                        class="social-link github">
-                        <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor">
-                            <path
-                                d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-                        </svg>
-                    </a>
-                    <a href="https://x.com/EthanAlgoX" target="_blank" title="Twitter / X" class="social-link twitter">
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
-                            <path
-                                d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
-                        </svg>
-                    </a>
-                </div>
+
             </div>
             <div class="status-indicators">
                 <div class="controls">
@@ -138,12 +124,12 @@
                                     tvWidget = new TradingView.widget({
                                         "width": "100%",
                                         "height": "100%",
-                                        "symbol": "BINANCE:" + symbol,
-                                        "interval": "1",
-                                        "timezone": "Asia/Shanghai",
+                                        "symbol": "NSE:" + symbol,
+                                        "interval": "5",
+                                        "timezone": "Asia/Kolkata",
                                         "theme": "dark",
                                         "style": "1",
-                                        "locale": "zh_CN",
+                                        "locale": "en",
                                         "toolbar_bg": "#f1f3f6",
                                         "enable_publishing": false,
                                         "hide_top_toolbar": true,
@@ -209,10 +195,10 @@
                             <select id="filter-symbol"
                                 style="padding: 4px 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; color: #fff; font-size: 0.8rem; cursor: pointer;">
                                 <option value="all">All Symbols</option>
-                                <option value="BTCUSDT">BTC</option>
-                                <option value="ETHUSDT">ETH</option>
-                                <option value="SOLUSDT">SOL</option>
-                                <option value="BNBUSDT">BNB</option>
+                                <option value="RELIANCE">RELIANCE</option>
+                                <option value="TCS">TCS</option>
+                                <option value="INFY">INFY</option>
+                                <option value="HDFCBANK">HDFC BANK</option>
                             </select>
                             <select id="filter-result"
                                 style="padding: 4px 8px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); border-radius: 4px; color: #fff; font-size: 0.8rem; cursor: pointer;">
@@ -468,16 +454,30 @@
                         </p>
                     </div>
 
-                    <div id="binance-config-section">
+                    <div id="angelone-config-section">
+                        <div style="color: #00ff9d; font-size: 0.9em; margin-bottom: 10px; font-weight: bold;">🇮🇳 AngelOne Broker Settings</div>
                         <div class="form-group">
-                            <label>Binance API Key</label>
-                            <input type="password" id="cfg-binance-key" class="form-control"
-                                placeholder="Saved (Hidden)">
+                            <label>API Key</label>
+                            <input type="password" id="cfg-angelone-api-key" class="form-control"
+                                placeholder="Your AngelOne API Key">
                         </div>
                         <div class="form-group">
-                            <label>Binance Secret Key</label>
-                            <input type="password" id="cfg-binance-secret" class="form-control"
-                                placeholder="Saved (Hidden)">
+                            <label>Client Code</label>
+                            <input type="text" id="cfg-angelone-client-code" class="form-control"
+                                placeholder="Your Client Code (e.g., A12345)">
+                        </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" id="cfg-angelone-password" class="form-control"
+                                placeholder="Your Trading Password">
+                        </div>
+                        <div class="form-group">
+                            <label>TOTP Secret</label>
+                            <input type="password" id="cfg-angelone-totp" class="form-control"
+                                placeholder="TOTP Secret for 2FA">
+                            <p style="color: #718096; font-size: 0.7em; margin-top: 2px;">Get credentials: <a
+                                href="https://smartapi.angelone.in/" target="_blank"
+                                style="color: #00ff9d">smartapi.angelone.in</a></p>
                         </div>
                         <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
                     </div>
@@ -551,13 +551,13 @@
 
                             <!-- Preset Buttons -->
                             <div style="margin-bottom: 12px; display: flex; gap: 8px;">
-                                <button type="button" class="btn-sm" onclick="selectPreset('major')"
+                                <button type="button" class="btn-sm" onclick="selectPreset('nifty50')"
                                     style="background:#2d3748; color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:4px; padding:4px 8px; cursor:pointer;">
-                                    Major 4
+                                    Nifty 50
                                 </button>
-                                <button type="button" class="btn-sm" onclick="selectPreset('ai500')"
+                                <button type="button" class="btn-sm" onclick="selectPreset('banknifty')"
                                     style="background:#553c9a; color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:4px; padding:4px 8px; cursor:pointer;">
-                                    🤖 AI500 Top 5
+                                    🏦 Bank Nifty
                                 </button>
                                 <button type="button" class="btn-sm" onclick="selectPreset('all')"
                                     style="background:#2d3748; color:#fff; border:1px solid rgba(255,255,255,0.2); border-radius:4px; padding:4px 8px; cursor:pointer;">
@@ -569,56 +569,62 @@
                                 </button>
                             </div>
 
-                            <!-- Major Coins -->
+                            <!-- Major Indian Stocks -->
                             <div style="margin-bottom: 10px;">
                                 <div style="color: #a0aec0; font-size: 0.8em; margin-bottom: 5px; font-weight: bold;">⭐
-                                    MAJOR COINS</div>
+                                    NIFTY 50 STOCKS</div>
                                 <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px;">
                                     <label style="cursor:pointer;"><input type="checkbox" name="cfg-symbol"
-                                            value="BTCUSDT"> BTC</label>
+                                            value="RELIANCE"> RELIANCE</label>
                                     <label style="cursor:pointer;"><input type="checkbox" name="cfg-symbol"
-                                            value="ETHUSDT"> ETH</label>
+                                            value="TCS"> TCS</label>
                                     <label style="cursor:pointer;"><input type="checkbox" name="cfg-symbol"
-                                            value="SOLUSDT"> SOL</label>
+                                            value="INFY"> INFY</label>
                                     <label style="cursor:pointer;"><input type="checkbox" name="cfg-symbol"
-                                            value="BNBUSDT"> BNB</label>
+                                            value="HDFCBANK"> HDFC BANK</label>
+                                    <label style="cursor:pointer;"><input type="checkbox" name="cfg-symbol"
+                                            value="ICICIBANK"> ICICI BANK</label>
+                                    <label style="cursor:pointer;"><input type="checkbox" name="cfg-symbol"
+                                            value="SBIN"> SBI</label>
+                                    <label style="cursor:pointer;"><input type="checkbox" name="cfg-symbol"
+                                            value="BHARTIARTL"> BHARTI</label>
+                                    <label style="cursor:pointer;"><input type="checkbox" name="cfg-symbol"
+                                            value="ITC"> ITC</label>
                                 </div>
                             </div>
 
-                            <!-- AI500 Top 10 -->
+                            <!-- Bank Nifty Stocks -->
                             <div>
                                 <div
                                     style="color: #a0aec0; font-size: 0.8em; margin-bottom: 5px; font-weight: bold; padding-top:5px; border-top:1px solid rgba(255,255,255,0.1);">
-                                    🤖 AI SECTOR (Dynamic)</div>
-                                <div style="display: grid; grid-template-columns: 1fr; gap: 5px;">
-                                    <label
-                                        style="cursor:pointer; display:flex; align-items:center; background:rgba(85, 60, 154, 0.2); padding:8px; border-radius:4px; border:1px solid rgba(85, 60, 154, 0.4);">
-                                        <input type="checkbox" name="cfg-symbol" value="AI500_TOP5"
-                                            style="margin-right:10px;">
-                                        <span>
-                                            <strong style="color:#b794f4;">🤖 AI500 Top 5 Dynamic</strong>
-                                            <br>
-                                            <span style="font-size:0.8em; color:#a0aec0;">Automatically selects Top 5
-                                                AI coins by 24h Volume from 30+ candidates (FET, RENDER, TAO, NEAR,
-                                                etc.)</span>
-                                        </span>
-                                    </label>
+                                    🏦 BANK NIFTY STOCKS</div>
+                                <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px;">
+                                    <label style="cursor:pointer;"><input type="checkbox" name="cfg-symbol"
+                                            value="HDFCBANK"> HDFC BANK</label>
+                                    <label style="cursor:pointer;"><input type="checkbox" name="cfg-symbol"
+                                            value="ICICIBANK"> ICICI BANK</label>
+                                    <label style="cursor:pointer;"><input type="checkbox" name="cfg-symbol"
+                                            value="KOTAKBANK"> KOTAK</label>
+                                    <label style="cursor:pointer;"><input type="checkbox" name="cfg-symbol"
+                                            value="AXISBANK"> AXIS BANK</label>
+                                    <label style="cursor:pointer;"><input type="checkbox" name="cfg-symbol"
+                                            value="SBIN"> SBI</label>
+                                    <label style="cursor:pointer;"><input type="checkbox" name="cfg-symbol"
+                                            value="INDUSINDBK"> INDUSIND</label>
                                 </div>
                             </div>
 
                             <script>
                                 function selectPreset(type) {
                                     const cbs = document.querySelectorAll('input[name="cfg-symbol"]');
-                                    const majorCoins = ['BTCUSDT', 'ETHUSDT', 'SOLUSDT', 'BNBUSDT'];
+                                    const nifty50 = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK', 'SBIN', 'BHARTIARTL', 'ITC'];
+                                    const bankNifty = ['HDFCBANK', 'ICICIBANK', 'KOTAKBANK', 'AXISBANK', 'SBIN', 'INDUSINDBK'];
 
                                     cbs.forEach(cb => {
                                         if (type === 'clear') cb.checked = false;
                                         else if (type === 'all') cb.checked = true;
-                                        else if (type === 'major') cb.checked = majorCoins.includes(cb.value);
-                                        // Specific handling for AI preset button if user clicks it
-                                        else if (type === 'ai500') {
-                                            if (cb.value === 'AI500_TOP5') cb.checked = true;
-                                        }
+                                        else if (type === 'nifty50') cb.checked = nifty50.includes(cb.value);
+                                        else if (type === 'banknifty') cb.checked = bankNifty.includes(cb.value);
                                     });
                                 }
                             </script>
@@ -677,7 +683,7 @@
                         </div>
                         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
                             <select id="new-account-exchange" class="form-control">
-                                <option value="binance">Binance</option>
+                                <option value="angelone">AngelOne</option>
                             </select>
                             <label style="display:flex; align-items:center; cursor:pointer;">
                                 <input type="checkbox" id="new-account-testnet" checked style="margin-right: 8px;">
@@ -704,14 +710,18 @@
                         btn.disabled = true;
 
                         try {
-                            const elBinanceKey = document.getElementById('cfg-binance-key');
-                            const elBinanceSecret = document.getElementById('cfg-binance-secret');
+                            const elApiKey = document.getElementById('cfg-angelone-api-key');
+                            const elClientCode = document.getElementById('cfg-angelone-client-code');
+                            const elPassword = document.getElementById('cfg-angelone-password');
+                            const elTotp = document.getElementById('cfg-angelone-totp');
                             const elDeepseekKey = document.getElementById('cfg-deepseek-key');
                             
                             const data = {
                                 api_keys: {
-                                    binance_api_key: elBinanceKey ? elBinanceKey.value : '',
-                                    binance_secret_key: elBinanceSecret ? elBinanceSecret.value : '',
+                                    angelone_api_key: elApiKey ? elApiKey.value : '',
+                                    angelone_client_code: elClientCode ? elClientCode.value : '',
+                                    angelone_password: elPassword ? elPassword.value : '',
+                                    angelone_totp_secret: elTotp ? elTotp.value : '',
                                     deepseek_api_key: elDeepseekKey ? elDeepseekKey.value : ''
                                 },
                                 trading: {
@@ -923,16 +933,16 @@
                     };
                 });
 
-                // 3. Mode Logic (Show/Hide Binance)
+                // 3. Mode Logic (Show/Hide AngelOne)
                 const modeSel = document.getElementById('cfg-run-mode');
-                const binSec = document.getElementById('binance-config-section');
+                const angeloneSec = document.getElementById('angelone-config-section');
 
-                if (modeSel && binSec) {
+                if (modeSel && angeloneSec) {
                     const updateUI = () => {
                         if (modeSel.value === 'test') {
-                            binSec.style.display = 'none';
+                            angeloneSec.style.display = 'none';
                         } else {
-                            binSec.style.display = 'block';
+                            angeloneSec.style.display = 'block';
                         }
                     };
                     modeSel.addEventListener('change', updateUI);

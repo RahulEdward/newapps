@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\strategy\llm_parser.py
+# hypothesis_version: 6.149.1
+
+['"', "'", ',', ',\\s*\\]', ',\\s*}', ':', ': ', ': "\'",\n            ', 'BTCUSDT', 'JSON 必须是数组格式，以 [{ 开头', '[', '[{', '\\', '\\1', '\\[\\s*\\{.*?\\}\\s*\\]', '\\d{1,3},\\d{3}', '\\s*```$', ']', '^```\\s*', '^```json\\s*', '__main__', 'action', 'buy', 'close', 'close_long', 'close_position', 'close_short', 'confidence', 'decision', 'exit', 'exit_long', 'exit_short', 'final_vote', 'go_long', 'go_short', 'hold', 'long', 'open_long', 'open_short', 'parse_error', 'raw_response', 'reasoning', 'sell', 'short', 'skip', 'symbol', 'wait', '{', '}', '~', '决策无效，进入安全回退模式', '未找到决策 JSON，进入安全回退模式', '测试 1 - 标准格式:', '测试 2 - 全角字符:', '测试 3 - action 变体:', '禁止使用千位分隔符 ,', '禁止使用范围符号 ~', '，', '：', '［', '］', '｛', '｝']

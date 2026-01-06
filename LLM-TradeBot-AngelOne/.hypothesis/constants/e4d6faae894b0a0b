@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\server\state.py
+# hypothesis_version: 6.149.1
+
+[0.0, 1000.0, 100, 200, 300, 500, '%H:%M:%S', '%Y-%m-%d %H:%M:%S', 'INFO', 'INIT', 'Running', 'Standing By', 'TRADE', 'UNKNOWN', 'Waiting', '[', 'action', 'available_balance', 'balance', 'confidence', 'cycle', 'dashboard', 'extra', 'function', 'level', 'message', 'name', 'pnl', 'pnl_pct', 'recorded_at', 'symbol', 'time', 'timestamp', 'total_equity', 'total_pnl', 'value', 'wallet_balance']

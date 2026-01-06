@@ -131,7 +131,7 @@ class DecisionCoreAgent:
         }
         
         # Integrate Prophet prediction score
-        if predict_result:
+        if predict_result is not None and hasattr(predict_result, 'probability_up'):
             # Map probability (0~1) to score (-100~+100)
             # 0.5 -> 0, 1.0 -> 100, 0.0 -> -100
             prob = predict_result.probability_up

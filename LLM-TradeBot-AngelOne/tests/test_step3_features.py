@@ -85,6 +85,9 @@ def test_outlier_winsorize():
 
 
 def test_persistence_schema_and_versioning(tmp_path):
+    # Skip if pyarrow is not installed
+    pytest.importorskip("pyarrow", reason="pyarrow required for parquet tests")
+    
     proc = MarketDataProcessor()
     df = make_base_df(80)
     klines = df.to_dict('records')

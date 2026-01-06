@@ -7,20 +7,29 @@ Creates appropriate trader instances based on exchange type.
 from typing import Dict, Any, Optional
 
 from .base import BaseTrader, ExchangeAccount, ExchangeType
-from .binance_trader import BinanceTrader
+
+# Import AngelOne trader (primary for Indian market)
 from .angelone_trader import AngelOneTrader
+
+# Try to import Binance trader (optional, for backward compatibility)
+try:
+    from .binance_trader import BinanceTrader
+    BINANCE_AVAILABLE = True
+except ImportError:
+    BinanceTrader = None
+    BINANCE_AVAILABLE = False
+
 from src.utils.logger import log
 
 
 # Mapping of exchange types to trader classes
 TRADER_CLASSES: Dict[ExchangeType, type] = {
-    ExchangeType.BINANCE: BinanceTrader,
     ExchangeType.ANGELONE: AngelOneTrader,
-    # Future implementations:
-    # ExchangeType.BYBIT: BybitTrader,
-    # ExchangeType.OKX: OKXTrader,
-    # ExchangeType.HYPERLIQUID: HyperliquidTrader,
 }
+
+# Add Binance if available
+if BINANCE_AVAILABLE:
+    TRADER_CLASSES[ExchangeType.BINANCE] = BinanceTrader
 
 
 def create_trader(account: ExchangeAccount) -> BaseTrader:

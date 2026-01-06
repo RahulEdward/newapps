@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\api\angelone\error_handler.py
+# hypothesis_version: 6.149.1
+
+[1.0, 2.0, 60.0, 'AG0000', 'AG0001', 'AG6001', 'AG6002', 'AG6003', 'AG7001', 'AG7002', 'AG7003', 'AG8001', 'AG8002', 'AG8003', 'AG8004', 'AG9001', 'AG9002', 'AG9003', 'AG9004', 'AG9005', 'AG9006', 'Connection error', 'Connection timeout', 'Data not available', 'FAILED', 'Insufficient margin', 'Invalid TOTP', 'Invalid credentials', 'Invalid interval', 'Invalid quantity', 'Invalid symbol', 'Market closed', 'Order not found', 'Order rejected', 'Rate limit exceeded', 'SUCCESS', 'Server error', 'Session expired', 'Too many requests', 'Unknown error', 'api_error_code', 'context', 'errorcode', 'message', 'rate limit', 'response', 'too many']

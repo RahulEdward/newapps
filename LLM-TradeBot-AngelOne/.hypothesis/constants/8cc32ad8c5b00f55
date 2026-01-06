@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\api\quant_client.py
+# hypothesis_version: 6.149.1
+
+[200, 401, '1h', 'BTCUSDT', 'QUANT_AUTH_TOKEN', 'USDT', '_loop', 'data', 'low-ranking', 'success', 'top', 'top-ranking']

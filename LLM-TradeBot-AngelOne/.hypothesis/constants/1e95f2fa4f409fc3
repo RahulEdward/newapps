@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\server\config_manager.py
+# hypothesis_version: 6.149.1
+
+['#', '******', '...', '.env', '15m', '=', 'AI500_TOP5', 'BINANCE_API_KEY', 'BINANCE_SECRET_KEY', 'CLAUDE_API_KEY', 'DEEPSEEK_API_KEY', 'DEEPSEEK_MODEL', 'GEMINI_API_KEY', 'LEVERAGE', 'LLM_PROVIDER', 'OPENAI_API_KEY', 'QWEN_API_KEY', 'RAILWAY_ENVIRONMENT', 'RAILWAY_PROJECT_ID', 'RUN_MODE', 'TRADING_SYMBOL', 'TRADING_SYMBOLS', 'TRADING_TIMEFRAME', 'api_keys', 'binance_api_key', 'binance_secret_key', 'claude_api_key', 'config', 'custom_prompt.md', 'deepseek', 'deepseek-chat', 'deepseek_api_key', 'gemini_api_key', 'leverage', 'llm', 'llm_provider', 'model', 'openai_api_key', 'provider', 'qwen_api_key', 'r', 'run_mode', 'symbol', 'test', 'timeframe', 'trading', 'utf-8', 'w']

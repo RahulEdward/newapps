@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """
-LLM-TradeBot 回测系统 CLI
-==========================
+LLM-TradeBot Backtesting System CLI
+===================================
 
-用法:
+Usage:
     python backtest.py --start 2024-01-01 --end 2024-12-01 \
-        --symbol BTCUSDT --capital 10000 --output reports/
+        --symbol RELIANCE --capital 100000 --output reports/
 
-参数:
-    --start       回测开始日期 (YYYY-MM-DD)
-    --end         回测结束日期 (YYYY-MM-DD)
-    --symbol      交易对 (默认: BTCUSDT)
-    --capital     初始资金 (USDT, 默认: 10000)
-    --step        时间步长 (1=5分钟, 3=15分钟, 12=1小时, 默认: 3)
-    --output      报告输出目录 (默认: reports/)
-    --no-report   不生成 HTML 报告
+Arguments:
+    --start       Backtest start date (YYYY-MM-DD)
+    --end         Backtest end date (YYYY-MM-DD)
+    --symbol      Trading symbol (default: RELIANCE)
+    --capital     Initial capital (INR, default: 100000)
+    --step        Time step (1=5min, 3=15min, 12=1hour, default: 3)
+    --output      Report output directory (default: reports/)
+    --no-report   Do not generate HTML report
 
 Author: AI Trader Team
 Date: 2025-12-31
@@ -25,27 +25,27 @@ import asyncio
 import sys
 import os
 
-# 添加项目根目录到路径
+# Add project root directory to path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from datetime import datetime
 
 
 def parse_args():
-    """解析命令行参数"""
+    """Parse command line arguments"""
     parser = argparse.ArgumentParser(
         description="LLM-TradeBot Backtester",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  # 回测 2024 年全年 BTC
-  python backtest.py --start 2024-01-01 --end 2024-12-31 --symbol BTCUSDT
+  # Backtest full year 2024 for RELIANCE
+  python backtest.py --start 2024-01-01 --end 2024-12-31 --symbol RELIANCE
 
-  # 快速回测（每小时决策）
+  # Quick backtest (hourly decisions)
   python backtest.py --start 2024-12-01 --end 2024-12-31 --step 12
 
-  # 指定初始资金
-  python backtest.py --start 2024-06-01 --end 2024-12-01 --capital 50000
+  # Specify initial capital
+  python backtest.py --start 2024-06-01 --end 2024-12-01 --capital 500000
         """
     )
     
@@ -53,28 +53,28 @@ Examples:
         "--start", "-s",
         type=str,
         required=True,
-        help="回测开始日期 (YYYY-MM-DD)"
+        help="Backtest start date (YYYY-MM-DD)"
     )
     
     parser.add_argument(
         "--end", "-e",
         type=str,
         required=True,
-        help="回测结束日期 (YYYY-MM-DD)"
+        help="Backtest end date (YYYY-MM-DD)"
     )
     
     parser.add_argument(
         "--symbol",
         type=str,
-        default="BTCUSDT",
-        help="交易对 (默认: BTCUSDT)"
+        default="RELIANCE",
+        help="Trading symbol (default: RELIANCE)"
     )
     
     parser.add_argument(
         "--capital",
         type=float,
-        default=10000.0,
-        help="初始资金 USDT (默认: 10000)"
+        default=100000.0,
+        help="Initial capital INR (default: 100000)"
     )
     
     parser.add_argument(
@@ -82,41 +82,41 @@ Examples:
         type=int,
         default=3,
         choices=[1, 3, 12],
-        help="时间步长: 1=5分钟, 3=15分钟, 12=1小时 (默认: 3)"
+        help="Time step: 1=5min, 3=15min, 12=1hour (default: 3)"
     )
     
     parser.add_argument(
         "--output", "-o",
         type=str,
         default="reports",
-        help="报告输出目录 (默认: reports/)"
+        help="Report output directory (default: reports/)"
     )
     
     parser.add_argument(
         "--no-report",
         action="store_true",
-        help="不生成 HTML 报告"
+        help="Do not generate HTML report"
     )
     
     parser.add_argument(
         "--max-position",
         type=float,
-        default=100.0,
-        help="最大单笔仓位 USDT (默认: 100)"
+        default=10000.0,
+        help="Maximum single position INR (default: 10000)"
     )
     
     parser.add_argument(
         "--stop-loss",
         type=float,
         default=1.0,
-        help="止损百分比 (默认: 1.0%%)"
+        help="Stop loss percentage (default: 1.0%%)"
     )
     
     parser.add_argument(
         "--take-profit",
         type=float,
         default=2.0,
-        help="止盈百分比 (默认: 2.0%%)"
+        help="Take profit percentage (default: 2.0%%)"
     )
     
     parser.add_argument(
@@ -124,27 +124,27 @@ Examples:
         type=str,
         default="agent",
         choices=["technical", "agent"],
-        help="策略模式: technical (简单EMA) 或 agent (多Agent框架, 默认: agent)"
+        help="Strategy mode: technical (simple EMA) or agent (multi-Agent framework, default: agent)"
     )
     
     parser.add_argument(
         "--use-llm",
         action="store_true",
-        help="启用 LLM 增强 (仅在 agent 模式下有效，会产生 API 费用)"
+        help="Enable LLM enhancement (only effective in agent mode, will incur API costs)"
     )
     
     parser.add_argument(
         "--llm-cache",
         action="store_true",
         default=True,
-        help="缓存 LLM 响应以节省费用 (默认: True)"
+        help="Cache LLM responses to save costs (default: True)"
     )
     
     return parser.parse_args()
 
 
 def validate_dates(start: str, end: str):
-    """验证日期格式"""
+    """Validate date format"""
     try:
         start_date = datetime.strptime(start, "%Y-%m-%d")
         end_date = datetime.strptime(end, "%Y-%m-%d")
@@ -165,19 +165,19 @@ def validate_dates(start: str, end: str):
 
 
 async def main():
-    """主函数"""
+    """Main function"""
     args = parse_args()
     
-    # 验证日期
+    # Validate dates
     start_date, end_date = validate_dates(args.start, args.end)
     
-    # 显示配置
+    # Display configuration
     print("\n" + "=" * 60)
     print("🔬 LLM-TradeBot Backtester")
     print("=" * 60)
     print(f"📅 Period: {args.start} to {args.end}")
     print(f"💰 Symbol: {args.symbol}")
-    print(f"💵 Initial Capital: ${args.capital:,.2f}")
+    print(f"💵 Initial Capital: ₹{args.capital:,.2f}")
     print(f"⏱️ Step: {args.step} ({['', '5min', '', '15min', '', '', '', '', '', '', '', '', '1hour'][args.step]})")
     print(f"🎯 Strategy Mode: {args.strategy_mode.upper()}")
     if args.strategy_mode == "agent":
@@ -188,11 +188,11 @@ async def main():
     print(f"🎯 Take Profit: {args.take_profit}%")
     print("=" * 60)
     
-    # 导入回测模块
+    # Import backtest modules
     from src.backtest.engine import BacktestEngine, BacktestConfig
     from src.backtest.report import BacktestReport
     
-    # 创建配置
+    # Create configuration
     config = BacktestConfig(
         symbol=args.symbol,
         start_date=args.start,
@@ -207,10 +207,10 @@ async def main():
         llm_cache=args.llm_cache
     )
     
-    # 创建引擎
+    # Create engine
     engine = BacktestEngine(config)
     
-    # 进度显示
+    # Progress display
     last_pct = 0
     def progress_callback(data):
         nonlocal last_pct
@@ -222,10 +222,10 @@ async def main():
             bar = "█" * filled + "░" * (bar_len - filled)
             print(f"\r📊 Progress: [{bar}] {pct:.1f}%", end="", flush=True)
     
-    # 运行回测
+    # Run backtest
     try:
         result = await engine.run(progress_callback=progress_callback)
-        print()  # 换行
+        print()  # New line
     except KeyboardInterrupt:
         print("\n\n⚠️ Backtest interrupted by user")
         sys.exit(0)
@@ -233,7 +233,7 @@ async def main():
         print(f"\n\n❌ Error during backtest: {e}")
         sys.exit(1)
     
-    # 显示结果
+    # Display results
     print("\n" + "=" * 60)
     print("📊 Backtest Results")
     print("=" * 60)
@@ -255,16 +255,16 @@ async def main():
     print(f"   Total Trades:  {m.total_trades}")
     print(f"   Win Rate:      {m.win_rate:.1f}%")
     print(f"   Profit Factor: {m.profit_factor:.2f}")
-    print(f"   Avg PnL:       ${m.avg_trade_pnl:.2f}")
+    print(f"   Avg PnL:       ₹{m.avg_trade_pnl:.2f}")
     print(f"   Avg Hold Time: {m.avg_holding_time:.1f}h")
     
     print(f"\n🐂🐻 Long/Short:")
-    print(f"   Long:  {m.long_trades} trades ({m.long_win_rate:.1f}% win) → ${m.long_pnl:+,.2f}")
-    print(f"   Short: {m.short_trades} trades ({m.short_win_rate:.1f}% win) → ${m.short_pnl:+,.2f}")
+    print(f"   Long:  {m.long_trades} trades ({m.long_win_rate:.1f}% win) → ₹{m.long_pnl:+,.2f}")
+    print(f"   Short: {m.short_trades} trades ({m.short_win_rate:.1f}% win) → ₹{m.short_pnl:+,.2f}")
     
     print(f"\n⏱️ Duration: {result.duration_seconds:.1f} seconds")
     
-    # 生成报告
+    # Generate report
     if not args.no_report:
         os.makedirs(args.output, exist_ok=True)
         

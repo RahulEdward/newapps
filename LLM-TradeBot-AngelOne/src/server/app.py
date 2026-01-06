@@ -36,7 +36,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__fil
 WEB_DIR = os.path.join(BASE_DIR, 'web')
 
 # Authentication Configuration
-WEB_PASSWORD = os.environ.get("WEB_PASSWORD", "EthanAlgoX")  # Admin password
+WEB_PASSWORD = os.environ.get("WEB_PASSWORD", "admin")  # Admin password
 
 # Auto-detect production environment (Railway sets RAILWAY_* env vars and PORT)
 IS_RAILWAY = bool(os.environ.get("RAILWAY_ENVIRONMENT") or os.environ.get("RAILWAY_PROJECT_ID"))
@@ -87,7 +87,7 @@ async def login(response: Response, data: LoginRequest):
     
     # Universal Login Logic (Robust for both Local and Railway)
     # 1. Admin Login: Password matches WEB_PASSWORD or hardcoded known admin passwords
-    if data.password == WEB_PASSWORD or data.password == "admin" or data.password == "EthanAlgoX":
+    if data.password == WEB_PASSWORD or data.password == "admin":
         role = 'admin'
     # 2. User Login: Password is 'guest' OR Empty -> Read Only
     elif not data.password or data.password == "guest":
@@ -138,7 +138,7 @@ async def get_status(authenticated: bool = Depends(verify_auth)):
             global_state.demo_expired = True
             if global_state.execution_mode == "Running":
                 global_state.execution_mode = "Stopped"
-                global_state.add_log("⏰ Demo 时间已到 (20分钟限制)，系统已自动停止。请配置您自己的 API Key 继续使用。")
+                global_state.add_log("⏰ Demo time expired (20-minute limit), system has automatically stopped. Please configure your own API Key to continue.")
     
     # Calculate demo time remaining
     demo_time_remaining = 0
@@ -220,7 +220,7 @@ async def control_bot(cmd: ControlCommand, authenticated: bool = Depends(verify_
         if global_state.demo_expired:
             raise HTTPException(
                 status_code=403, 
-                detail="Demo 时间已用尽 (20分钟限制)。请在 Settings > API Keys 中配置您自己的 API Key 后重试。"
+                detail="Demo time exhausted (20-minute limit). Please configure your own API Key in Settings > API Keys and try again."
             )
         
         # Activate demo mode if using default API
@@ -228,7 +228,7 @@ async def control_bot(cmd: ControlCommand, authenticated: bool = Depends(verify_
             if not global_state.demo_mode_active:
                 global_state.demo_mode_active = True
                 global_state.demo_start_time = time.time()
-                global_state.add_log("⚠️ 正在使用默认 API，20分钟后将自动停止。请配置您自己的 API Key 以解除限制。")
+                global_state.add_log("⚠️ Using default API, will auto-stop after 20 minutes. Please configure your own API Key to remove this limit.")
         else:
             # User has their own API key, disable demo mode
             global_state.demo_mode_active = False

@@ -1,58 +1,124 @@
-# Binance API 配置
-# 注意: api_key 和 api_secret 会被 .env 文件中的环境变量自动覆盖
-# 推荐使用 .env 文件配置敏感信息
-binance:
-  api_key: "BINANCE_API_KEY"        # 会被环境变量 BINANCE_API_KEY 覆盖
-  api_secret: "BINANCE_API_SECRET"  # 会被环境变量 BINANCE_API_SECRET 覆盖
-  testnet: true  # 测试网模式，实盘前改为 false
-  
-# DeepSeek API 配置 (向后兼容)
-# 注意: api_key 会被 .env 文件中的环境变量自动覆盖
-deepseek:
-  api_key: "DEEPSEEK_API_KEY"       # 会被环境变量 DEEPSEEK_API_KEY 覆盖
-  base_url: "https://api.deepseek.com"
-  model: "deepseek-chat"
-  temperature: 0.3
-  max_tokens: 2000
+# =====================================================
+# LLM-TradeBot AngelOne Configuration
+# =====================================================
+# 
+# This configuration file is for AngelOne (Indian Stock Broker) integration.
+# Sensitive credentials should be stored in .env file.
+#
+# =====================================================
 
-# LLM 配置 (多提供商支持)
-# 支持: openai, deepseek, claude, qwen, gemini
+# -----------------------------------------------------
+# AngelOne Broker Configuration
+# -----------------------------------------------------
+# Get credentials at: https://smartapi.angelone.in/
+# 
+# Note: All sensitive values will be overridden by environment variables
+# Recommended to use .env file for api_key, client_code, password, totp_secret
+#
+angelone:
+  api_key: "${ANGELONE_API_KEY}"           # SmartAPI Key from AngelOne
+  client_code: "${ANGELONE_CLIENT_CODE}"   # Your AngelOne Client ID
+  password: "${ANGELONE_PASSWORD}"         # Your AngelOne Password (PIN)
+  totp_secret: "${ANGELONE_TOTP_SECRET}"   # TOTP Secret for 2FA
+  testnet: false                           # AngelOne doesn't have testnet, always live
+
+# -----------------------------------------------------
+# Trading Configuration
+# -----------------------------------------------------
+trading:
+  # Exchange: NSE, BSE, NFO (F&O), MCX (Commodities)
+  exchange: "NSE"
+  
+  # Trading symbols - Indian market format
+  # Equity: RELIANCE, TCS, INFY, HDFCBANK
+  # Futures: NIFTY (auto-maps to current month), BANKNIFTY
+  # Options: NIFTY23DEC21000CE, BANKNIFTY23DEC45000PE
+  symbols:
+    - symbol: "RELIANCE"
+      exchange: "NSE"
+      instrument_type: "EQ"
+    - symbol: "TCS"
+      exchange: "NSE"
+      instrument_type: "EQ"
+  
+  primary_symbol: "RELIANCE"  # Primary trading symbol
+  
+  # Timeframes supported: 1m, 5m, 15m, 1h, 1d
+  timeframes: ["1m", "5m", "15m", "1h"]
+  
+  # Product types: INTRADAY, DELIVERY, CARRYFORWARD
+  product_type: "INTRADAY"
+  
+  # Default quantity for orders
+  default_quantity: 1
+  
+  # Leverage (for F&O)
+  leverage: 1
+
+# -----------------------------------------------------
+# Market Hours Configuration (IST - Indian Standard Time)
+# -----------------------------------------------------
+market:
+  timezone: "Asia/Kolkata"
+  pre_market_start: "09:00"    # Pre-market session start
+  market_open: "09:15"         # Regular market open
+  market_close: "15:30"        # Market close
+  post_market_end: "16:00"     # Post-market session end
+
+# -----------------------------------------------------
+# Risk Management Configuration
+# -----------------------------------------------------
+risk:
+  max_risk_per_trade_pct: 1.5      # Maximum risk per trade (%)
+  max_total_position_pct: 30.0     # Maximum total position (%)
+  max_leverage: 5                   # Maximum leverage allowed
+  max_consecutive_losses: 3         # Stop after N consecutive losses
+  stop_trading_on_drawdown_pct: 10.0  # Stop trading on drawdown (%)
+
+# -----------------------------------------------------
+# LLM Configuration (Multi-provider support)
+# -----------------------------------------------------
+# Supported providers: openai, deepseek, claude, qwen, gemini
 llm:
-  provider: deepseek              # 当前使用的提供商
-  model: deepseek-chat            # 模型名称 (留空则使用提供商默认值)
+  provider: deepseek              # Currently used provider
+  model: deepseek-chat            # Model name
   temperature: 0.3
   max_tokens: 2000
   timeout: 120
   max_retries: 3
 
-# 交易配置
-trading:
-  symbols: ["BTCUSDT"]  # 默认只使用 BTC，可添加其他币种如 "ETHUSDT", "SOLUSDT"
-  primary_symbol: "BTCUSDT"  # 主要交易对（向后兼容）
-  timeframes: ["1m", "5m", "15m", "1h"]
-  leverage: 5
-  
-# 风控配置
-risk:
-  max_risk_per_trade_pct: 1.5  # 单笔最大风险
-  max_total_position_pct: 30.0  # 最大总仓位
-  max_leverage: 5
-  max_consecutive_losses: 3
-  stop_trading_on_drawdown_pct: 10.0
+# DeepSeek API Configuration
+deepseek:
+  api_key: "${DEEPSEEK_API_KEY}"
+  base_url: "https://api.deepseek.com"
+  model: "deepseek-chat"
+  temperature: 0.3
+  max_tokens: 2000
 
-# Redis 配置
+# -----------------------------------------------------
+# Redis Configuration (Optional - for caching)
+# -----------------------------------------------------
 redis:
   host: "localhost"
   port: 6379
   db: 0
-  
-# 日志配置
+
+# -----------------------------------------------------
+# Logging Configuration
+# -----------------------------------------------------
 logging:
   level: "INFO"
   file: "logs/trading.log"
-  
-# 回测配置
+
+# -----------------------------------------------------
+# Backtest Configuration
+# -----------------------------------------------------
 backtest:
   start_date: "2024-01-01"
   end_date: "2024-12-01"
-  initial_capital: 10000
+  initial_capital: 100000
+  # Indian market brokerage (approximate)
+  brokerage_per_trade: 20        # Flat fee per trade (INR)
+  stt_rate: 0.001                # STT rate (0.1%)
+  gst_rate: 0.18                 # GST on brokerage (18%)
+  stamp_duty_rate: 0.00015       # Stamp duty (0.015%)

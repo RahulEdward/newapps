@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\backtest\metrics.py
+# hypothesis_version: 6.149.1
+
+[0.0, 0.002, 0.01, 0.02, -100, 100, 200, 365, 500, 10000, 50000, '%Y-%m-%d', '2024-01-01', '=', 'Apr', 'Aug', 'BTCUSDT', 'D', 'Dec', 'Feb', 'Jan', 'Jul', 'Jun', 'M', 'Mar', 'May', 'N/A', 'Nov', 'Oct', 'Sep', '__main__', 'avg_holding_time', 'avg_loss', 'avg_pnl', 'avg_trade_pnl', 'avg_win', 'calmar_ratio', 'close', 'count', 'drawdown', 'drawdown_pct', 'final_equity', 'inf', 'largest_loss', 'largest_win', 'long_pnl', 'long_trades', 'long_win_rate', 'losing', 'max_drawdown', 'max_drawdown_pct', 'month', 'period', 'profit_amount', 'profit_factor', 'return', 'sharpe_ratio', 'short_pnl', 'short_trades', 'short_win_rate', 'sortino_ratio', 'total', 'total_days', 'total_equity', 'total_pnl', 'total_return', 'total_trades', 'trading_days', 'volatility', 'win_rate', 'winning', 'year']

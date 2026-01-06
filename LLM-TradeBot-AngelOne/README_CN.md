@@ -8,7 +8,7 @@
 
 [![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)](https://www.python.org/)
 [![License](https://img.shields.io/badge/License-AGPL%20v3.0-blue.svg)](LICENSE)
-[![Framework](https://img.shields.io/badge/Strategy-Adversarial%20Intelligence-gold.svg)](https://github.com/EthanAlgoX/LLM-TradeBot)
+[![Framework](https://img.shields.io/badge/Strategy-Adversarial%20Intelligence-gold.svg)]()
 
 ---
 

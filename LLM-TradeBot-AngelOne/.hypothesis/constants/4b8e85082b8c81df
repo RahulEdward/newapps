@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\agents\regime_detector.py
+# hypothesis_version: 6.149.1
+
+[0.0, 0.5, 0.7, 1.5, 2.0, 20.0, 25.0, 50.0, 60.0, 65.0, 70.0, 80.0, 85.0, 100, 150, 200, 87000, '1. Uptrend Test:', '2025-01-01', '5min', 'ADX>20(+20)', 'ADX>25(+40)', 'EMA_Aligned(+30)', 'MACD_Momentum(+30)', '__main__', 'adx', 'atr', 'atr_pct', 'bb_lower', 'bb_middle', 'bb_upper', 'bb_width_pct', 'breakout_direction', 'breakout_probability', 'buy_dip', 'choppy', 'choppy_analysis', 'close', 'confidence', 'consolidation_bars', 'down', 'ema_12', 'ema_26', 'high', 'location', 'low', 'macd', 'macd_signal', 'middle', 'neutral', 'position', 'position_pct', 'range', 'range_pct', 'reason', 'regime', 'resistance', 'sell_rally', 'sma_20', 'sma_50', 'squeeze_active', 'squeeze_intensity', 'strategy_hint', 'support', 'timestamp', 'trend_direction', 'trending_down', 'trending_up', 'unknown', 'up', 'volatile', 'volume']

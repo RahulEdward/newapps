@@ -71,7 +71,7 @@ function initChart() {
         data: {
             labels: [],
             datasets: [{
-                label: 'Total Equity (USDT)',
+                label: 'Total Equity (INR)',
                 data: [],
                 borderColor: '#00ff9d',
                 backgroundColor: 'rgba(0, 255, 157, 0.1)',
@@ -350,7 +350,7 @@ function renderDecisionTable(history, positions = []) {
         if (time.includes(' ')) {
             time = time.split(' ')[1] || time; // Extract time part
         }
-        const symbol = d.symbol || 'BTCUSDT';
+        const symbol = d.symbol || 'RELIANCE';
         const action = (d.action || 'HOLD').toUpperCase();
         const conf = d.confidence ? ((d.confidence > 1 ? d.confidence : d.confidence * 100).toFixed(0) + '%') : '-';
 
@@ -677,7 +677,7 @@ function renderChart(history, initialAmount = null) {
         const maxDelta = Math.max(deltaUp, deltaDown);
 
         // Add some padding (e.g. 10%) so the curve doesn't touch the edges
-        // Ensure even if flat, we have a small range (e.g. 10 USDT or 1%)
+        // Ensure even if flat, we have a small range (e.g. 1000 INR or 1%)
         const padding = maxDelta === 0 ? (baseline * 0.01) : (maxDelta * 0.2);
 
         const yMax = baseline + maxDelta + padding;
@@ -871,8 +871,8 @@ function updateSymbolSelector(symbols) {
 
     // Build new options
     const options = symbols.map(symbol => {
-        // Format display name (e.g., BTCUSDT -> BTC/USDT)
-        const displayName = symbol.replace('USDT', '/USDT');
+        // Format display name for Indian stocks
+        const displayName = symbol;
         return `<option value="${symbol}">${displayName}</option>`;
     }).join('');
 
@@ -909,8 +909,8 @@ function updateDecisionFilter(symbols) {
     const options = ['<option value="all">All Symbols</option>'];
 
     symbols.forEach(symbol => {
-        // Format display name (e.g., BTCUSDT -> BTC)
-        const displayName = symbol.replace('USDT', '');
+        // Format display name for Indian stocks
+        const displayName = symbol;
         options.push(`<option value="${symbol}">${displayName}</option>`);
     });
 
@@ -1312,7 +1312,7 @@ function showAccountAlert(failureCount) {
                     <strong>Possible causes:</strong><br>
                     • API key expired or insufficient permissions<br>
                     • Network connection issues<br>
-                    • Binance API service abnormal
+                    • AngelOne API service abnormal
                 </p>
             </div>
             <button id="close-alert-btn" style="
@@ -1757,8 +1757,11 @@ async function loadSettings() {
 
         // Fill Form
         const safeVal = (v) => v || '';
-        document.getElementById('cfg-binance-key').value = safeVal(config.api_keys.binance_api_key);
-        document.getElementById('cfg-binance-secret').value = safeVal(config.api_keys.binance_secret_key);
+        // AngelOne credentials
+        setIfExists('cfg-angelone-api-key', config.api_keys.angelone_api_key);
+        setIfExists('cfg-angelone-client-code', config.api_keys.angelone_client_code);
+        setIfExists('cfg-angelone-password', config.api_keys.angelone_password);
+        setIfExists('cfg-angelone-totp', config.api_keys.angelone_totp_secret);
         document.getElementById('cfg-deepseek-key').value = safeVal(config.api_keys.deepseek_api_key);
 
         // Multi-LLM Provider Keys
@@ -1791,12 +1794,12 @@ async function loadSettings() {
                 cb.checked = false;
             }
         });
-        // Default to BTCUSDT if none saved or matches legacy default
-        const isLegacyDefault = savedSymbols.length === 0 || (savedSymbols.length === 1 && (savedSymbols[0] === '' || savedSymbols[0] === 'BTCUSDT' || savedSymbols[0] === 'SOLUSDT'));
+        // Default to RELIANCE if none saved or matches legacy default
+        const isLegacyDefault = savedSymbols.length === 0 || (savedSymbols.length === 1 && (savedSymbols[0] === '' || savedSymbols[0] === 'RELIANCE'));
 
         if (!anyChecked || isLegacyDefault) {
             checkboxes.forEach(cb => {
-                if (cb.value === 'BTCUSDT') cb.checked = true;
+                if (cb.value === 'RELIANCE') cb.checked = true;
             });
         }
         document.getElementById('cfg-leverage').value = safeVal(config.trading.leverage);
@@ -1835,8 +1838,10 @@ async function saveSettings() {
     // alert('Starting saveSettings()...'); 
 
     // Validate Elements exist
-    const elBinanceKey = document.getElementById('cfg-binance-key');
-    const elBinanceSecret = document.getElementById('cfg-binance-secret');
+    const elApiKey = document.getElementById('cfg-angelone-api-key');
+    const elClientCode = document.getElementById('cfg-angelone-client-code');
+    const elPassword = document.getElementById('cfg-angelone-password');
+    const elTotp = document.getElementById('cfg-angelone-totp');
     const elDeepseekKey = document.getElementById('cfg-deepseek-key');
     const elOpenaiKey = document.getElementById('cfg-openai-key');
     const elClaudeKey = document.getElementById('cfg-claude-key');
@@ -1844,14 +1849,16 @@ async function saveSettings() {
     const elGeminiKey = document.getElementById('cfg-gemini-key');
     const elLlmProvider = document.getElementById('cfg-llm-provider');
 
-    if (!elBinanceKey || !elDeepseekKey) {
+    if (!elDeepseekKey) {
         throw new Error("Critical Form Elements missing! Refresh page.");
     }
 
     const data = {
         api_keys: {
-            binance_api_key: elBinanceKey.value,
-            binance_secret_key: elBinanceSecret ? elBinanceSecret.value : '',
+            angelone_api_key: elApiKey ? elApiKey.value : '',
+            angelone_client_code: elClientCode ? elClientCode.value : '',
+            angelone_password: elPassword ? elPassword.value : '',
+            angelone_totp_secret: elTotp ? elTotp.value : '',
             deepseek_api_key: elDeepseekKey.value,
             openai_api_key: elOpenaiKey ? elOpenaiKey.value : '',
             claude_api_key: elClaudeKey ? elClaudeKey.value : '',
@@ -1993,7 +2000,7 @@ document.addEventListener('DOMContentLoaded', () => {
         addBtn.addEventListener('click', async () => {
             const id = document.getElementById('new-account-id')?.value?.trim();
             const name = document.getElementById('new-account-name')?.value?.trim();
-            const exchange = document.getElementById('new-account-exchange')?.value || 'binance';
+            const exchange = document.getElementById('new-account-exchange')?.value || 'angelone';
             const testnet = document.getElementById('new-account-testnet')?.checked ?? true;
 
             if (!id || !name) {

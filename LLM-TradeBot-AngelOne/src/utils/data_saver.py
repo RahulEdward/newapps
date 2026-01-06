@@ -1,5 +1,5 @@
 """
-数据保存工具模块 - 按日期组织数据文件 (Multi-Agent Refactor)
+Data Saver Utility Module - Organize data files by date (Multi-Agent Refactor)
 """
 import os
 import json
@@ -27,29 +27,29 @@ class CustomJSONEncoder(json.JSONEncoder):
 
 
 class DataSaver:
-    """数据保存工具类 - 按Agent和业务领域自动组织文件
+    """Data Saver Utility Class - Auto-organize files by Agent and business domain
     
-    新目录结构 (Multi-Agent Framework):
+    New directory structure (Multi-Agent Framework):
     data/
-      agents/              (所有LLM Agent的日志)
+      agents/              (All LLM Agent logs)
         trend_agent/
         setup_agent/
         trigger_agent/
         bull_bear/
         strategy_engine/
         reflection/
-      market_data/         (原始市场数据)
-      analytics/           (量化分析)
-      execution/           (交易执行)
-      risk/                (风控审计)
+      market_data/         (Raw market data)
+      analytics/           (Quantitative analysis)
+      execution/           (Trade execution)
+      risk/                (Risk control audit)
     """
     
     def __init__(self, base_dir: str = 'data'):
         self.base_dir = base_dir
         
-        # 定义业务目录映射 (Agent-Based Structure)
+        # Define business directory mapping (Agent-Based Structure)
         self.dirs = {
-            # Agent层 - 所有LLM Agent日志
+            # Agent layer - All LLM Agent logs
             'trend_agent': os.path.join(base_dir, 'agents', 'trend_agent'),
             'setup_agent': os.path.join(base_dir, 'agents', 'setup_agent'),
             'trigger_agent': os.path.join(base_dir, 'agents', 'trigger_agent'),
@@ -57,34 +57,34 @@ class DataSaver:
             'strategy_engine': os.path.join(base_dir, 'agents', 'strategy_engine'),
             'reflection': os.path.join(base_dir, 'agents', 'reflection'),
             
-            # 数据层
+            # Data layer
             'market_data': os.path.join(base_dir, 'market_data'),
             
-            # 分析层
+            # Analysis layer
             'indicators': os.path.join(base_dir, 'analytics', 'indicators'),
             'predictions': os.path.join(base_dir, 'analytics', 'predictions'),
             'regime': os.path.join(base_dir, 'analytics', 'regime'),
             'analytics': os.path.join(base_dir, 'analytics'),
             
-            # 执行层
+            # Execution layer
             'orders': os.path.join(base_dir, 'execution', 'orders'),
             'trades': os.path.join(base_dir, 'execution', 'trades'),
             
-            # 风控层
+            # Risk control layer
             'risk_audits': os.path.join(base_dir, 'risk', 'audits'),
             
-            # 兼容旧路径 (向后兼容)
-            'llm_logs': os.path.join(base_dir, 'agents', 'strategy_engine'),  # 兼容旧代码
+            # Backward compatible paths
+            'llm_logs': os.path.join(base_dir, 'agents', 'strategy_engine'),  # Compatible with old code
             'decisions': os.path.join(base_dir, 'agents', 'strategy_engine'),
         }
         
-        # 兼容旧路径映射
+        # Backward compatible path mapping
         self.dirs['agent_context'] = self.dirs['analytics']
         self.dirs['executions'] = self.dirs['orders']
-        self.dirs['features'] = self.dirs['analytics']  # features合并到analytics
+        self.dirs['features'] = self.dirs['analytics']  # features merged into analytics
             
     def _get_date_folder(self, category: str, symbol: Optional[str] = None, date: Optional[str] = None) -> str:
-        """获取或创建指定类别的日期文件夹 (支持按币种嵌套)"""
+        """Get or create date folder for specified category (supports nesting by symbol)"""
         if date is None:
             date = datetime.now().strftime('%Y%m%d')
         
@@ -109,9 +109,9 @@ class DataSaver:
         save_formats: List[str] = ['json', 'csv'],
         cycle_id: str = None
     ) -> Dict[str, str]:
-        """保存原始K线数据 (原 save_step1_klines)"""
+        """Save raw candlestick data (formerly save_step1_klines)"""
         if not klines:
-            log.warning("K线数据为空，跳过保存")
+            log.warning("Candlestick data is empty, skipping save")
             return {}
         
         date_folder = self._get_date_folder('market_data', symbol=symbol)
@@ -165,7 +165,7 @@ class DataSaver:
         snapshot_id: str,
         cycle_id: str = None
     ) -> Dict[str, str]:
-        """保存技术指标数据 (原 save_step2_indicators)"""
+        """Save technical indicator data (formerly save_step2_indicators)"""
         date_folder = self._get_date_folder('indicators', symbol=symbol)
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         
@@ -192,7 +192,7 @@ class DataSaver:
         version: str = 'v1',
         cycle_id: str = None
     ) -> Dict[str, str]:
-        """保存特征数据 (原 save_step3_features)"""
+        """Save feature data (formerly save_step3_features)"""
         date_folder = self._get_date_folder('features', symbol=symbol)
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         
@@ -218,7 +218,7 @@ class DataSaver:
         snapshot_id: str,
         cycle_id: str = None
     ) -> Dict[str, str]:
-        """保存Agent上下文/分析结果 (原 save_step4_context)"""
+        """Save Agent context/analysis results (formerly save_step4_context)"""
         date_folder = self._get_date_folder('agent_context', symbol=symbol)
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         
@@ -241,9 +241,9 @@ class DataSaver:
         snapshot_id: str,
         cycle_id: str = None
     ) -> Dict[str, str]:
-        """保存LLM交互日志 (按币种分文件夹)
+        """Save LLM interaction log (organized by symbol subfolder)
         
-        路径结构: data/agents/strategy_engine/{SYMBOL}/{YYYYMMDD}/llm_log_{timestamp}.md
+        Path structure: data/agents/strategy_engine/{SYMBOL}/{YYYYMMDD}/llm_log_{timestamp}.md
         """
         # Get symbol-specific subfolder using central helper
         symbol_date_folder = self._get_date_folder('llm_logs', symbol=symbol)
@@ -414,7 +414,7 @@ class DataSaver:
         snapshot_id: str,
         cycle_id: str = None
     ) -> Dict[str, str]:
-        """保存决策结果 (原 save_step6_decision)"""
+        """Save decision result (formerly save_step6_decision)"""
         date_folder = self._get_date_folder('decisions', symbol=symbol)
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         
@@ -438,7 +438,7 @@ class DataSaver:
         symbol: str,
         cycle_id: str = None
     ) -> Dict[str, str]:
-        """保存执行记录"""
+        """Save execution record"""
         date_folder = self._get_date_folder('orders', symbol=symbol)
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         
@@ -470,7 +470,7 @@ class DataSaver:
         snapshot_id: str,
         cycle_id: str = None
     ) -> Dict[str, str]:
-        """保存风控审计结果"""
+        """Save risk control audit result"""
         date_folder = self._get_date_folder('risk_audits', symbol=symbol)
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         

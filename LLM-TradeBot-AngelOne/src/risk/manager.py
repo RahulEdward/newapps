@@ -1,5 +1,5 @@
 """
-风险管理模块
+Risk Management Module
 """
 from typing import Dict, Optional, List, Any, Tuple
 from datetime import datetime, timedelta
@@ -8,7 +8,7 @@ from src.utils.logger import log
 
 
 class RiskManager:
-    """风险管理器 - 硬编码风控规则"""
+    """Risk Manager - Hardcoded risk control rules"""
     
     def __init__(self):
         self.max_risk_per_trade_pct = config.risk.get('max_risk_per_trade_pct', 1.5)
@@ -17,7 +17,7 @@ class RiskManager:
         self.max_consecutive_losses = config.risk.get('max_consecutive_losses', 3)
         self.stop_trading_drawdown_pct = config.risk.get('stop_trading_on_drawdown_pct', 10.0)
         
-        # 交易历史记录（用于计算连续亏损）
+        # Trade history (for calculating consecutive losses)
         self.trade_history: List[Dict] = []
         self.consecutive_losses = 0
         self.total_drawdown_pct = 0
@@ -26,60 +26,60 @@ class RiskManager:
     
     def validate_format(self, decision: Dict, raw_response: str = "") -> Tuple[bool, str]:
         """
-        验证 DeepSeek 输出格式
+        Validate DeepSeek output format
         
         Args:
-            decision: 解析后的决策字典
-            raw_response: 原始 LLM 响应文本（可选，用于检查标签）
+            decision: Parsed decision dictionary
+            raw_response: Raw LLM response text (optional, for checking tags)
             
         Returns:
             (is_valid, error_message)
         """
         action = decision.get('action', '').lower()
         
-        # 1. 检查必需字段
+        # 1. Check required fields
         required_fields = ['symbol', 'action', 'reasoning']
         for field in required_fields:
             if field not in decision or not decision[field]:
-                return False, f"格式错误: 缺少必需字段 '{field}'"
+                return False, f"Format error: missing required field '{field}'"
         
-        # 2. 检查 reasoning 长度（应该简洁）
+        # 2. Check reasoning length (should be concise)
         reasoning = decision.get('reasoning', '')
         if len(reasoning.split()) > 50:
-            return False, f"格式错误: reasoning 过长 ({len(reasoning.split())} 词 > 50 词)"
+            return False, f"Format error: reasoning too long ({len(reasoning.split())} words > 50 words)"
         
-        # 3. 检查 action 类型
+        # 3. Check action type
         valid_actions = ['open_long', 'open_short', 'close_long', 'close_short', 'hold', 'wait']
         if action not in valid_actions:
-            return False, f"格式错误: 无效的 action '{action}', 必须是 {valid_actions} 之一"
+            return False, f"Format error: invalid action '{action}', must be one of {valid_actions}"
         
-        # 4. 检查开仓动作的必需字段
+        # 4. Check required fields for open position actions
         if action in ['open_long', 'open_short']:
             open_required = ['leverage', 'position_size_usd', 'stop_loss', 'take_profit']
             for field in open_required:
                 if field not in decision:
-                    return False, f"格式错误: {action} 缺少必需字段 '{field}'"
+                    return False, f"Format error: {action} missing required field '{field}'"
                 
-                # 检查是否为数字类型
+                # Check if numeric type
                 value = decision[field]
                 if not isinstance(value, (int, float)):
-                    return False, f"格式错误: '{field}' 必须是纯数字，不能是字符串或公式 (当前值: {value})"
+                    return False, f"Format error: '{field}' must be a pure number, not string or formula (current value: {value})"
                 
-                # 检查是否包含非法字符（如果是从字符串转换来的）
+                # Check for illegal characters (if converted from string)
                 value_str = str(value)
                 if '~' in value_str:
-                    return False, f"格式错误: '{field}' 包含范围符号 '~' (值: {value})"
+                    return False, f"Format error: '{field}' contains range symbol '~' (value: {value})"
                 if ',' in value_str and value_str.replace(',', '').replace('.', '').isdigit():
-                    return False, f"格式错误: '{field}' 包含千位分隔符 ',' (值: {value})"
+                    return False, f"Format error: '{field}' contains thousands separator ',' (value: {value})"
                 if any(op in value_str for op in ['*', '/', '+', '-']) and not value_str.replace('.', '').replace('-', '').isdigit():
-                    return False, f"格式错误: '{field}' 包含运算符，必须是计算后的纯数字 (值: {value})"
+                    return False, f"Format error: '{field}' contains operators, must be calculated pure number (value: {value})"
             
-            # 5. 检查杠杆范围
+            # 5. Check leverage range
             leverage = decision.get('leverage')
             if not (1 <= leverage <= 5):
-                return False, f"格式错误: leverage 必须在 1-5 之间 (当前值: {leverage})"
+                return False, f"Format error: leverage must be between 1-5 (current value: {leverage})"
             
-            # 6. 检查止损方向
+            # 6. Check stop loss direction
             entry_price = decision.get('current_price') or decision.get('entry_price', 0)
             stop_loss = decision.get('stop_loss')
             take_profit = decision.get('take_profit')
@@ -87,41 +87,41 @@ class RiskManager:
             if entry_price and stop_loss and take_profit:
                 if action == 'open_long':
                     if stop_loss >= entry_price:
-                        return False, f"格式错误: 做多止损必须 < 入场价 (SL:{stop_loss} >= Entry:{entry_price})"
+                        return False, f"Format error: long stop loss must be < entry price (SL:{stop_loss} >= Entry:{entry_price})"
                     if take_profit <= entry_price:
-                        return False, f"格式错误: 做多止盈必须 > 入场价 (TP:{take_profit} <= Entry:{entry_price})"
+                        return False, f"Format error: long take profit must be > entry price (TP:{take_profit} <= Entry:{entry_price})"
                 elif action == 'open_short':
                     if stop_loss <= entry_price:
-                        return False, f"格式错误: 做空止损必须 > 入场价 (SL:{stop_loss} <= Entry:{entry_price})"
+                        return False, f"Format error: short stop loss must be > entry price (SL:{stop_loss} <= Entry:{entry_price})"
                     if take_profit >= entry_price:
-                        return False, f"格式错误: 做空止盈必须 < 入场价 (TP:{take_profit} >= Entry:{entry_price})"
+                        return False, f"Format error: short take profit must be < entry price (TP:{take_profit} >= Entry:{entry_price})"
                 
-                # 7. 检查风险回报比
+                # 7. Check risk-reward ratio
                 risk = abs(entry_price - stop_loss)
                 reward = abs(take_profit - entry_price)
                 if risk > 0:
                     rr_ratio = reward / risk
                     if rr_ratio < 2.0:
-                        return False, f"格式错误: 风险回报比不足 (R:R = {rr_ratio:.2f} < 2.0)"
+                        return False, f"Format error: insufficient risk-reward ratio (R:R = {rr_ratio:.2f} < 2.0)"
         
-        # 8. 检查原始响应格式（如果提供）
+        # 8. Check raw response format (if provided)
         if raw_response:
             if '<reasoning>' not in raw_response or '</reasoning>' not in raw_response:
-                return False, "格式错误: 缺少 <reasoning> 标签"
+                return False, "Format error: missing <reasoning> tag"
             if '<decision>' not in raw_response or '</decision>' not in raw_response:
-                return False, "格式错误: 缺少 <decision> 标签"
+                return False, "Format error: missing <decision> tag"
             if '```json' not in raw_response:
-                return False, "格式错误: JSON 必须包裹在 ```json 代码块中"
+                return False, "Format error: JSON must be wrapped in ```json code block"
             
-            # 检查 JSON 数组格式
+            # Check JSON array format
             import re
             json_match = re.search(r'```json\s*(\[.*?\])\s*```', raw_response, re.DOTALL)
             if json_match:
                 json_str = json_match.group(1).strip()
                 if not json_str.startswith('[{'):
-                    return False, f"格式错误: JSON 必须是数组格式，以 '[{{' 开头 (当前: {json_str[:10]}...)"
+                    return False, f"Format error: JSON must be array format, starting with '[{{' (current: {json_str[:10]}...)"
         
-        return True, "格式验证通过"
+        return True, "Format validation passed"
     
     def validate_decision(
         self, 
@@ -387,26 +387,26 @@ class RiskManager:
         current_price: float
     ) -> float:
         """
-        计算实际开仓数量
+        Calculate actual position quantity
         
         Args:
-            account_balance: 账户余额
-            position_pct: 仓位百分比
-            leverage: 杠杆
-            current_price: 当前价格
+            account_balance: Account balance
+            position_pct: Position percentage
+            leverage: Leverage
+            current_price: Current price
             
         Returns:
-            开仓数量（已舍入到合适精度）
+            Position quantity (rounded to appropriate precision)
         """
         position_value = account_balance * (position_pct / 100)
         position_value_with_leverage = position_value * leverage
         quantity = position_value_with_leverage / current_price
         
-        # 舍入到3位小数（BTC合约的标准精度）
-        # 确保不小于最小交易量0.001
+        # Round to 3 decimal places (standard precision for BTC contracts)
+        # Ensure not less than minimum trade quantity 0.001
         quantity = max(round(quantity, 3), 0.001)
         
-        log.info(f"计算仓位: 余额=${account_balance:.2f}, 仓位={position_pct}%, 杠杆={leverage}x, 价格=${current_price:.2f} -> 数量={quantity}")
+        log.info(f"Calculate position: balance=${account_balance:.2f}, position={position_pct}%, leverage={leverage}x, price=${current_price:.2f} -> quantity={quantity}")
         
         return quantity
     
@@ -417,22 +417,22 @@ class RiskManager:
         side: str
     ) -> float:
         """
-        计算止损价格
+        Calculate stop loss price
         
         Args:
-            entry_price: 入场价
-            stop_loss_pct: 止损百分比
+            entry_price: Entry price
+            stop_loss_pct: Stop loss percentage
             side: LONG or SHORT
             
         Returns:
-            止损价格（四舍五入到2位小数，符合BTCUSDT精度要求）
+            Stop loss price (rounded to 2 decimal places, meets BTCUSDT precision requirement)
         """
         if side == 'LONG':
             price = entry_price * (1 - stop_loss_pct / 100)
         else:  # SHORT
             price = entry_price * (1 + stop_loss_pct / 100)
         
-        # 四舍五入到2位小数（BTCUSDT的价格精度）
+        # Round to 2 decimal places (BTCUSDT price precision)
         return round(price, 2)
     
     def calculate_take_profit_price(
@@ -442,38 +442,38 @@ class RiskManager:
         side: str
     ) -> float:
         """
-        计算止盈价格（四舍五入到2位小数，符合BTCUSDT精度要求）
+        Calculate take profit price (rounded to 2 decimal places, meets BTCUSDT precision requirement)
         """
         if side == 'LONG':
             price = entry_price * (1 + take_profit_pct / 100)
         else:  # SHORT
             price = entry_price * (1 - take_profit_pct / 100)
         
-        # 四舍五入到2位小数（BTCUSDT的价格精度）
+        # Round to 2 decimal places (BTCUSDT price precision)
         return round(price, 2)
     
     def record_trade(self, trade: Dict):
-        """记录交易结果"""
+        """Record trade result"""
         self.trade_history.append(trade)
         
-        # 更新连续亏损计数
+        # Update consecutive loss count
         if trade.get('pnl', 0) < 0:
             self.consecutive_losses += 1
         else:
             self.consecutive_losses = 0
         
-        log.info(f"交易记录: PnL={trade.get('pnl', 0):.2f}, 连续亏损={self.consecutive_losses}")
+        log.info(f"Trade recorded: PnL={trade.get('pnl', 0):.2f}, consecutive losses={self.consecutive_losses}")
     
     def update_drawdown(self, current_balance: float, peak_balance: float):
-        """更新回撤"""
+        """Update drawdown"""
         if peak_balance > 0:
             self.total_drawdown_pct = ((peak_balance - current_balance) / peak_balance) * 100
         
         if self.total_drawdown_pct > 0:
-            log.warning(f"当前回撤: {self.total_drawdown_pct:.2f}%")
+            log.warning(f"Current drawdown: {self.total_drawdown_pct:.2f}%")
     
     def get_risk_status(self) -> Dict:
-        """获取风险状态"""
+        """Get risk status"""
         return {
             'consecutive_losses': self.consecutive_losses,
             'total_drawdown_pct': self.total_drawdown_pct,

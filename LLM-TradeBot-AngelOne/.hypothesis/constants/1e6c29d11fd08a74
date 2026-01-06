@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\strategy\decision_validator.py
+# hypothesis_version: 6.149.1
+
+[2.0, 30.0, 200.0, 84000.0, 84710.0, 86000.0, 87000.0, 88580.0, 100, 'BTCUSDT', '__main__', 'action', 'close_long', 'close_position', 'close_short', 'confidence', 'current_price', 'entry_price', 'hold', 'leverage', 'max_confidence', 'max_leverage', 'max_position_pct', 'min_confidence', 'open_long', 'open_short', 'position_size_pct', 'position_size_usd', 'reasoning', 'risk_usd', 'stop_loss', 'symbol', 'take_profit', 'wait', '~', '开仓操作缺少必填字段', '测试 1 - 有效的做多决策:', '测试 2 - 止损方向错误:', '测试 3 - 风险回报比不足:']

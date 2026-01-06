@@ -1,8 +1,8 @@
 """
-Claude 客户端实现
-================
+Claude Client Implementation
+============================
 
-Anthropic Claude 使用不同的 API 格式，需要单独实现。
+Anthropic Claude uses a different API format, requires separate implementation.
 """
 
 from typing import Dict, Any, List
@@ -11,12 +11,12 @@ from .base import BaseLLMClient, LLMConfig, ChatMessage, LLMResponse
 
 class ClaudeClient(BaseLLMClient):
     """
-    Claude 客户端 (Anthropic API)
+    Claude Client (Anthropic API)
     
-    Claude 使用不同的 API 格式：
-    - 认证使用 x-api-key 而非 Bearer token
-    - 端点是 /messages 而非 /chat/completions
-    - system prompt 是独立字段
+    Claude uses a different API format:
+    - Authentication uses x-api-key instead of Bearer token
+    - Endpoint is /messages instead of /chat/completions
+    - System prompt is a separate field
     """
     
     DEFAULT_BASE_URL = "https://api.anthropic.com/v1"
@@ -26,7 +26,7 @@ class ClaudeClient(BaseLLMClient):
     ANTHROPIC_VERSION = "2023-06-01"
     
     def _build_headers(self) -> Dict[str, str]:
-        """构建 Anthropic 认证头"""
+        """Build Anthropic authentication headers"""
         return {
             "x-api-key": self.config.api_key,
             "anthropic-version": self.ANTHROPIC_VERSION,
@@ -34,7 +34,7 @@ class ClaudeClient(BaseLLMClient):
         }
     
     def _build_url(self) -> str:
-        """Claude 使用 /messages 端点"""
+        """Claude uses /messages endpoint"""
         return f"{self.base_url}/messages"
     
     def _build_request_body(
@@ -43,11 +43,11 @@ class ClaudeClient(BaseLLMClient):
         **kwargs
     ) -> Dict[str, Any]:
         """
-        构建 Claude 请求体
+        Build Claude request body
         
-        Claude 的 system prompt 是独立字段，不在 messages 中
+        Claude's system prompt is a separate field, not in messages
         """
-        # 提取 system message
+        # Extract system message
         system_content = ""
         user_messages = []
         
@@ -66,7 +66,7 @@ class ClaudeClient(BaseLLMClient):
         if system_content:
             body["system"] = system_content
         
-        # Claude 不支持 temperature=0，最小值是 0.1
+        # Claude doesn't support temperature=0, minimum is 0.1
         temperature = kwargs.get("temperature", self.config.temperature)
         if temperature > 0:
             body["temperature"] = max(0.1, temperature)
@@ -74,7 +74,7 @@ class ClaudeClient(BaseLLMClient):
         return body
     
     def _parse_response(self, response: Dict[str, Any]) -> LLMResponse:
-        """解析 Claude 响应"""
+        """Parse Claude response"""
         content = ""
         for block in response.get("content", []):
             if block.get("type") == "text":

@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\exchanges\angelone_trader.py
+# hypothesis_version: 6.149.1
+
+[0.0, 500, '-', 'BUY', 'INTRADAY', 'LIMIT', 'LONG', 'MARKET', 'NEW', 'NSE', 'No position found', 'OPEN', 'PENDING', 'PLACED', 'REJECTED', 'SELL', 'SHORT', 'STOPLOSS_MARKET', 'availableBalance', 'avgPrice', 'cash', 'funding_rate', 'ltp', 'note', 'open_interest', 'orderId', 'price', 'quantity', 'status', 'symbol', 'totalBalance', 'unrealizedPnl']

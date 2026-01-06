@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\llm\base.py
+# hypothesis_version: 6.149.1
+
+[0.7, 120, 429, 500, 502, 503, 504, 4096, 'Max retries exceeded', 'api_key is required', 'base', 'content', 'role', 'system', 'user']

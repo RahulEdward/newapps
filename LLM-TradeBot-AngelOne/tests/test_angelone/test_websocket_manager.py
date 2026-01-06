@@ -96,8 +96,11 @@ class TestWebSocketManager:
         on_error = Mock()
         ws_manager._on_error = on_error
         
-        # Pass None to simulate missing WebSocket class
-        result = ws_manager.connect(ws_class=None)
+        # Create a mock class that raises an exception when instantiated
+        def failing_ws_class(*args, **kwargs):
+            raise Exception("Connection failed")
+        
+        result = ws_manager.connect(ws_class=failing_ws_class)
         
         assert result is False
         assert ws_manager.state == ConnectionState.ERROR

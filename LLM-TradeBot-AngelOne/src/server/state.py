@@ -32,7 +32,7 @@ class SharedState:
     
     # Agent Status
     oracle_status: str = "Waiting"
-    prophet_probability: float = 0.0  # PredictAgent 上涨概率
+    prophet_probability: float = 0.0  # PredictAgent up probability
     critic_confidence: Dict[str, float] = field(default_factory=dict)
     guardian_status: str = "Standing By"
     
@@ -222,7 +222,7 @@ class SharedState:
             time_since_success = time.time() - self.account_last_success_time
             if time_since_success >= 300 and not self.account_alert_active:
                 self.account_alert_active = True
-                log.error(f"⚠️ 账户信息获取失败已超过 5 分钟！连续失败次数: {self.account_failure_count}")
+                log.error(f"⚠️ Account info fetch failed for over 5 minutes! Consecutive failures: {self.account_failure_count}")
         
     def add_log(self, message: str):
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

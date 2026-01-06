@@ -1,5 +1,5 @@
 """
-特征构建模块 - 为LLM准备输入数据
+Feature Building Module - Prepare input data for LLM
 """
 from typing import Dict, List, Optional
 from datetime import datetime
@@ -9,7 +9,7 @@ from src.utils.logger import log
 
 
 class FeatureBuilder:
-    """特征构建器 - 将市场数据转换为LLM可理解的上下文"""
+    """Feature Builder - Convert market data to LLM-understandable context"""
     
     def __init__(self):
         pass
@@ -22,73 +22,73 @@ class FeatureBuilder:
         position_info: Optional[Dict] = None
     ) -> Dict:
         """
-        构建完整的市场上下文
+        Build complete market context
         
         Args:
-            symbol: 交易对
-            multi_timeframe_states: 多周期市场状态
-            snapshot: 市场快照
-            position_info: 持仓信息
+            symbol: Trading pair
+            multi_timeframe_states: Multi-timeframe market states
+            snapshot: Market snapshot
+            position_info: Position information
             
         Returns:
-            结构化的市场上下文（包含完整元数据和数据质量验证）
+            Structured market context (with complete metadata and data quality validation)
         """
         
-        # === 数据质量验证（静默检查）===
-        # 验证多周期价格一致性
+        # === Data Quality Validation (Silent Check) ===
+        # Validate multi-timeframe price consistency
         price_check = self._validate_multiframe_prices(multi_timeframe_states)
         if not price_check['consistent']:
-            log.debug(f"[{symbol}] 多周期价格一致性: {', '.join(price_check['warnings'])}")
+            log.debug(f"[{symbol}] Multi-timeframe price consistency: {', '.join(price_check['warnings'])}")
         
-        # 验证多周期时间对齐
+        # Validate multi-timeframe time alignment
         alignment_check = self._validate_multiframe_alignment(multi_timeframe_states)
         if not alignment_check['aligned']:
-            log.debug(f"[{symbol}] 多周期时间对齐: {', '.join(alignment_check['warnings'])}")
+            log.debug(f"[{symbol}] Multi-timeframe time alignment: {', '.join(alignment_check['warnings'])}")
         
-        # 🆕 验证指标完整性（每个周期）
+        # Validate indicator completeness (per timeframe)
         indicator_completeness = {}
         for tf, state in multi_timeframe_states.items():
             if 'indicator_completeness' in state:
                 indicator_completeness[tf] = state['indicator_completeness']
             else:
-                # 如果processor没有提供,标记为未知
+                # If processor didn't provide, mark as unknown
                 indicator_completeness[tf] = {
                     'is_complete': None,
-                    'issues': ['未提供指标完整性检查'],
+                    'issues': ['Indicator completeness check not provided'],
                     'overall_coverage': None
                 }
         
-        # 提取当前价格信息
+        # Extract current price info
         current_price = snapshot.get('price', {}).get('price', 0)
         
-        # 资金费率
+        # Funding rate
         funding_rate = snapshot.get('funding', {}).get('funding_rate', 0)
         
-        # 持仓量
+        # Open interest
         oi_data = snapshot.get('oi', {})
         
-        # 订单簿流动性分析
+        # Order book liquidity analysis
         orderbook = snapshot.get('orderbook', {})
         liquidity_score = self._analyze_liquidity(orderbook)
         
-        # 提取账户获取错误（如果有）
+        # Extract account fetch error (if any)
         account_fetch_error = snapshot.get('account_error', None)
         
-        # 提取快照ID（用于数据一致性追踪）
+        # Extract snapshot IDs (for data consistency tracking)
         snapshot_ids = {}
         for tf, state in multi_timeframe_states.items():
             if 'snapshot_id' in state:
                 snapshot_ids[tf] = state['snapshot_id']
         
-        # 构建上下文
+        # Build context
         context = {
             'timestamp': datetime.now().isoformat(),
             'symbol': symbol,
             
-            # === 数据一致性追踪 ===
-            'snapshot_ids': snapshot_ids,  # 各周期的快照ID
+            # === Data Consistency Tracking ===
+            'snapshot_ids': snapshot_ids,
             
-            # 市场概览
+            # Market overview
             'market_overview': {
                 'current_price': current_price,
                 'funding_rate': funding_rate,
@@ -97,21 +97,21 @@ class FeatureBuilder:
                 'liquidity': liquidity_score
             },
             
-            # 多周期分析
+            # Multi-timeframe analysis
             'multi_timeframe': multi_timeframe_states,
             
-            # 持仓上下文
+            # Position context
             'position_context': self._build_position_context(
                 position_info,
                 current_price,
                 snapshot.get('account', {}),
-                account_fetch_error  # 传递错误信息
+                account_fetch_error
             ),
             
-            # 风险约束
+            # Risk constraints
             'risk_constraints': self._get_risk_constraints(),
             
-            # === 🆕 数据质量报告 ===
+            # Data Quality Report
             'data_quality': {
                 'price_consistency': price_check,
                 'time_alignment': alignment_check,
@@ -124,7 +124,7 @@ class FeatureBuilder:
     
     def _analyze_liquidity(self, orderbook: Dict) -> str:
         """
-        分析订单簿流动性
+        Analyze order book liquidity
         
         Returns:
             'high', 'medium', 'low'
@@ -138,13 +138,13 @@ class FeatureBuilder:
         if not bids or not asks:
             return 'low'
         
-        # 计算前5档深度
+        # Calculate top 5 levels depth
         bid_depth = sum([q for p, q in bids[:5]])
         ask_depth = sum([q for p, q in asks[:5]])
         
         total_depth = bid_depth + ask_depth
         
-        # 简单分类（需要根据实际市场调整阈值）
+        # Simple classification (thresholds need adjustment based on actual market)
         if total_depth > 100:
             return 'high'
         elif total_depth > 50:
@@ -154,7 +154,7 @@ class FeatureBuilder:
     
     def _classify_funding_rate(self, funding_rate: float) -> str:
         """
-        分类资金费率
+        Classify funding rate
         
         Returns:
             'extremely_positive', 'positive', 'neutral', 'negative', 'extremely_negative'
@@ -178,25 +178,25 @@ class FeatureBuilder:
         account_fetch_error: Optional[str] = None
     ) -> Dict:
         """
-        构建持仓上下文
+        Build position context
         
-        重要：不要将 None/缺失 转换为 0，要明确标注
+        Important: Do not convert None/missing to 0, explicitly mark as None
         """
         
-        # 如果没有账户信息，明确标注为 None
+        # If no account info, explicitly mark as None
         if not account or account_fetch_error:
             return {
                 'has_position': False,
                 'side': 'NONE',
-                'size': None,  # 明确标注为 None，不是 0
+                'size': None,
                 'entry_price': None,
                 'current_pnl_pct': None,
                 'unrealized_pnl': None,
-                'account_balance': None,  # 重要：None 不是 0
+                'account_balance': None,
                 'total_balance': None,
                 'margin_usage_pct': None,
                 'account_fetch_error': account_fetch_error or 'No account data available',
-                'warning': '⚠️ Account info missing, trading is not recommended'
+                'warning': 'Account info missing, trading is not recommended'
             }
         
         if not position or position.get('position_amt', 0) == 0:
@@ -217,7 +217,7 @@ class FeatureBuilder:
         entry_price = position.get('entry_price', 0)
         unrealized_pnl = position.get('unrealized_profit', 0)
         
-        # 计算盈亏百分比
+        # Calculate PnL percentage
         if entry_price > 0:
             if position_amt > 0:  # LONG
                 pnl_pct = (current_price - entry_price) / entry_price * 100
@@ -226,7 +226,7 @@ class FeatureBuilder:
         else:
             pnl_pct = 0
         
-        # 计算保证金使用率
+        # Calculate margin usage rate
         total_balance = account.get('total_wallet_balance', 0)
         margin_balance = account.get('total_margin_balance', 0)
         
@@ -250,7 +250,7 @@ class FeatureBuilder:
         }
     
     def _get_risk_constraints(self) -> Dict:
-        """获取风险约束配置"""
+        """Get risk constraint configuration"""
         from src.config import config
         
         return {
@@ -262,9 +262,9 @@ class FeatureBuilder:
     
     def format_for_llm(self, context: Dict) -> str:
         """
-        将上下文格式化为LLM友好的文本
+        Format context as LLM-friendly text
         
-        这是提供给DeepSeek的最终输入
+        This is the final input provided to DeepSeek
         """
         
         market = context['market_overview']
@@ -272,107 +272,83 @@ class FeatureBuilder:
         mtf = context['multi_timeframe']
         constraints = context['risk_constraints']
         
-        # 构建文本描述
+        # Build text description
         text = f"""
-## 市场快照 ({context['timestamp']})
+## Market Snapshot ({context['timestamp']})
 
-**交易对**: {context['symbol']}
-**当前价格**: ${market['current_price']:,.2f}
+**Trading Pair**: {context['symbol']}
+**Current Price**: ${market['current_price']:,.2f}
 
-### 市场状态总览
-- **资金费率**: {market['funding_rate']:.4%} ({market['funding_rate_status']})
-  → 资金费率反映多空力量对比，正值表示多头支付空头，负值相反
-- **持仓量(OI)**: {market['open_interest']:,.0f}
-  → 持仓量增加通常表示新资金入场，减少表示资金流出
-- **流动性深度**: {market['liquidity']}
-  → 反映订单簿深度，影响大单的滑点
+### Market Status Overview
+- **Funding Rate**: {market['funding_rate']:.4%} ({market['funding_rate_status']})
+  - Funding rate reflects long/short power balance
+- **Open Interest (OI)**: {market['open_interest']:,.0f}
+  - Increasing OI indicates new capital entering
+- **Liquidity Depth**: {market['liquidity']}
+  - Reflects order book depth
 
-### 多周期分析
-→ 建议：综合多个时间周期判断，大周期确定趋势方向，小周期寻找入场时机
+### Multi-Timeframe Analysis
 """
         
-        # 添加多周期状态（按时间周期排序，从小到大）
+        # Add multi-timeframe states (sorted by timeframe)
         timeframe_order = ['1m', '5m', '15m', '30m', '1h', '4h', '1d']
         sorted_tfs = sorted(mtf.keys(), key=lambda x: timeframe_order.index(x) if x in timeframe_order else 999)
         
         for tf in sorted_tfs:
             state = mtf[tf]
             text += f"\n**{tf}**:\n"
-            text += f"  - 趋势: {state.get('trend', 'N/A')}\n"
-            text += f"  - 波动率: {state.get('volatility', 'N/A')} (ATR: {state.get('atr_pct', 'N/A')}%)\n"
-            text += f"  - 动量: {state.get('momentum', 'N/A')}\n"
+            text += f"  - Trend: {state.get('trend', 'N/A')}\n"
+            text += f"  - Volatility: {state.get('volatility', 'N/A')} (ATR: {state.get('atr_pct', 'N/A')}%)\n"
+            text += f"  - Momentum: {state.get('momentum', 'N/A')}\n"
             text += f"  - RSI: {state.get('rsi', 'N/A')}\n"
-            text += f"  - MACD信号: {state.get('macd_signal', 'N/A')}\n"
-            text += f"  - 成交量比率: {state.get('volume_ratio', 'N/A')}\n"
-            text += f"  - 成交量变化: {state.get('volume_change_pct', 'N/A')}%\n"
-            text += f"  - 当前价格: ${state.get('price', 'N/A')}\n"
+            text += f"  - MACD Signal: {state.get('macd_signal', 'N/A')}\n"
+            text += f"  - Volume Ratio: {state.get('volume_ratio', 'N/A')}\n"
+            text += f"  - Volume Change: {state.get('volume_change_pct', 'N/A')}%\n"
+            text += f"  - Current Price: ${state.get('price', 'N/A')}\n"
             
-            # 关键价位
             levels = state.get('key_levels', {})
             if levels.get('support'):
-                text += f"  - 支撑位: {levels['support']}\n"
+                text += f"  - Support: {levels['support']}\n"
             if levels.get('resistance'):
-                text += f"  - 阻力位: {levels['resistance']}\n"
+                text += f"  - Resistance: {levels['resistance']}\n"
         
-        # 持仓信息
-        text += "\n### 当前持仓\n"
+        # Position info
+        text += "\n### Current Position\n"
         if position.get('account_fetch_error'):
-            # 账户信息获取失败
-            text += f"⚠️ **警告**: {position['warning']}\n"
-            text += f"- 错误原因: {position['account_fetch_error']}\n"
-            text += "- Position Status: Unable to fetch\n"
-            text += "- Account Balance: Unable to fetch\n"
-            text += "\n**Important**: Account info unavailable. Recommendations:\n"
-            text += "  1. Do not open any new positions\n"
-            text += "  2. Check if API key is correctly configured\n"
-            text += "  3. Verify API permissions include account query\n"
+            text += f"Warning: {position['warning']}\n"
+            text += f"- Error Reason: {position['account_fetch_error']}\n"
         elif position['has_position']:
-            text += f"- 方向: {position['side']}\n"
-            text += f"- 数量: {position['size']}\n"
-            text += f"- 入场价: ${position['entry_price']:,.2f}\n"
-            text += f"- 当前盈亏: {position['current_pnl_pct']:.2f}%\n"
-            text += f"- 未实现盈亏: ${position['unrealized_pnl']:,.2f}\n"
-            text += f"- 杠杆: {position['leverage']}x\n"
-            text += f"- 保证金使用率: {position['margin_usage_pct']:.1f}%\n"
+            text += f"- Direction: {position['side']}\n"
+            text += f"- Quantity: {position['size']}\n"
+            text += f"- Entry Price: ${position['entry_price']:,.2f}\n"
+            text += f"- Current PnL: {position['current_pnl_pct']:.2f}%\n"
+            text += f"- Unrealized PnL: ${position['unrealized_pnl']:,.2f}\n"
+            text += f"- Leverage: {position['leverage']}x\n"
+            text += f"- Margin Usage: {position['margin_usage_pct']:.1f}%\n"
         else:
-            text += "- 无持仓\n"
+            text += "- No Position\n"
         
-        text += f"\n### 账户信息\n"
+        text += f"\n### Account Info\n"
         if position.get('account_fetch_error'):
             text += "- Available Balance: **Unable to fetch**\n"
             text += "- Total Balance: **Unable to fetch**\n"
         else:
             balance = position.get('account_balance')
             total = position.get('total_balance', 0)
-            text += f"- 可用余额: ${balance:,.2f}\n" if balance is not None else "- 可用余额: **未知**\n"
-            text += f"- 总余额: ${total:,.2f}\n"
+            text += f"- Available Balance: ${balance:,.2f}\n" if balance is not None else "- Available Balance: **Unknown**\n"
+            text += f"- Total Balance: ${total:,.2f}\n"
         
-        # 风险约束
-        text += f"\n### 风险约束\n"
-        text += f"- 单笔最大风险: {constraints['max_risk_per_trade_pct']}%\n"
-        text += f"- 最大总仓位: {constraints['max_total_position_pct']}%\n"
-        text += f"- 最大杠杆: {constraints['max_leverage']}x\n"
-        text += f"- 最大连续亏损: {constraints['max_consecutive_losses']}次\n"
-        
-        # 添加决策指引
-        text += f"\n### 决策要求\n"
-        text += "请基于以上信息进行综合分析：\n"
-        text += "1. **多周期趋势一致性**: 检查不同周期的趋势是否一致\n"
-        text += "2. **动量与波动率**: 评估市场动能和波动性\n"
-        text += "3. **技术指标共振**: RSI、MACD等指标是否发出一致信号\n"
-        text += "4. **资金费率与OI**: 分析市场情绪和资金流向\n"
-        text += "5. **支撑阻力位**: 考虑关键价位对价格的影响\n"
-        text += "6. **风险收益比**: 确保潜在收益至少是风险的2倍以上\n"
-        text += "7. **持仓管理**: 如有持仓，考虑是否需要调整或止盈止损\n"
+        # Risk constraints
+        text += f"\n### Risk Constraints\n"
+        text += f"- Max Risk Per Trade: {constraints['max_risk_per_trade_pct']}%\n"
+        text += f"- Max Total Position: {constraints['max_total_position_pct']}%\n"
+        text += f"- Max Leverage: {constraints['max_leverage']}x\n"
+        text += f"- Max Consecutive Losses: {constraints['max_consecutive_losses']} times\n"
         
         return text
     
     def _validate_multiframe_prices(self, multi_timeframe_states: Dict[str, Dict]) -> Dict:
-        """
-        验证多周期价格一致性
-        
-        检查不同时间周期的收盘价是否一致
-        """
+        """Validate multi-timeframe price consistency"""
         all_prices = []
         warnings = []
         
@@ -380,11 +356,10 @@ class FeatureBuilder:
             if 'close' in state:
                 all_prices.append(state['close'])
             else:
-                warnings.append(f"{tf} 缺失收盘价")
+                warnings.append(f"{tf} missing close price")
         
-        # 检查一致性
         if len(set(all_prices)) > 1:
-            warnings.append("不同周期的收盘价不一致")
+            warnings.append("Close prices across different timeframes are inconsistent")
         
         return {
             'consistent': len(warnings) == 0,
@@ -392,11 +367,7 @@ class FeatureBuilder:
         }
     
     def _validate_multiframe_alignment(self, multi_timeframe_states: Dict[str, Dict]) -> Dict:
-        """
-        验证多周期时间对齐
-        
-        检查不同时间周期的时间戳是否对齐
-        """
+        """Validate multi-timeframe time alignment"""
         all_times = []
         warnings = []
         
@@ -404,11 +375,10 @@ class FeatureBuilder:
             if 'timestamp' in state:
                 all_times.append(state['timestamp'])
             else:
-                warnings.append(f"{tf} 缺失时间戳")
+                warnings.append(f"{tf} missing timestamp")
         
-        # 检查对齐情况
         if len(set(all_times)) > 1:
-            warnings.append("不同周期的时间戳不一致")
+            warnings.append("Timestamps across different timeframes are inconsistent")
         
         return {
             'aligned': len(warnings) == 0,
@@ -416,46 +386,30 @@ class FeatureBuilder:
         }
     
     def _calculate_quality_score(self, price_check: Dict, alignment_check: Dict, indicator_completeness: Dict) -> float:
-        """
-        计算数据质量分数
-        
-        综合考虑:
-        1. 价格一致性 (权重: 30%)
-        2. 时间对齐 (权重: 20%)
-        3. 指标完整性 (权重: 50%)
-        
-        Returns:
-            质量分数 (0-100)
-        """
+        """Calculate data quality score (0-100)"""
         score = 100.0
         
-        # 1. 价格一致性检查 (-30分)
         if not price_check.get('consistent', True):
             score -= 30
         elif len(price_check.get('warnings', [])) > 0:
-            score -= 15  # 有警告但不严重
+            score -= 15
         
-        # 2. 时间对齐检查 (-20分)
         if not alignment_check.get('aligned', True):
             score -= 20
         
-        # 3. 指标完整性检查 (-50分)
-        # 计算所有周期的平均完整性
         completeness_scores = []
         for tf, comp in indicator_completeness.items():
             if comp.get('is_complete') is True:
                 completeness_scores.append(100.0)
             elif comp.get('overall_coverage') is not None:
-                # 按覆盖率打分
                 completeness_scores.append(comp['overall_coverage'] * 100)
             else:
                 completeness_scores.append(0.0)
         
         if completeness_scores:
             avg_completeness = sum(completeness_scores) / len(completeness_scores)
-            # 完整性权重50%
             score -= (100 - avg_completeness) * 0.5
         else:
-            score -= 50  # 无法评估完整性，扣满分
+            score -= 50
         
-        return max(score, 0.0)  # 分数不低于 0
+        return max(score, 0.0)

@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\agents\trigger_detector.py
+# hypothesis_version: 6.149.1
+
+[1.0, 1.5, 'breakout', 'breakout_level', 'close', 'curr_candle', 'current_price', 'current_volume', 'details', 'detected', 'engulfing', 'high', 'long', 'low', 'open', 'pattern', 'pattern_type', 'prev_candle', 'rvol', 'triggered', 'vol_ma3', 'volume', 'volume_ratio']

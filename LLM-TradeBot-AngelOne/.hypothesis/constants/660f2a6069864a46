@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\agents\trend_agent.py
+# hypothesis_version: 6.149.1
+
+[0.3, 300, 'DOWNTREND', 'ERROR', 'MODERATE', 'MODERATE FUEL', 'MODERATE TREND', 'NEUTRAL', 'STRONG', 'STRONG FUEL', 'STRONG TREND', 'UNKNOWN', 'UPTREND', 'WEAK', 'WEAK FUEL', 'WEAK/NO TREND', 'adx', 'analysis', 'api_key', 'api_keys', 'base_url', 'close_1h', 'current_cycle_id', 'deepseek', 'deepseek-chat', 'downtrend', 'dummy-key-will-fail', 'ema20_1h', 'ema60_1h', 'error', 'metadata', 'model', 'moderate', 'neutral', 'oi_change', 'oi_fuel', 'provider', 'regime', 'saver', 'stance', 'strength', 'strong', 'symbol', 'unknown', 'uptrend', 'weak']

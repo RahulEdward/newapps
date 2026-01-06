@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\utils\semantic_converter.py
+# hypothesis_version: 6.149.1
+
+[-5.0, -2.0, -0.5, -0.0005, 0.0005, 0.3, 0.45, 0.5, 0.55, 0.7, 1.0, 2.0, 5.0, 100.0, 'Bearish', 'Bearish Momentum', 'Bearish Setup', 'Bullish', 'Bullish Setup', 'Downtrend (Sell)', 'N/A (No Data)', 'Neutral', 'Neutral (Zero)', 'Slight Decrease', 'Slight Increase', 'Stable', 'Strong Bearish', 'Strong Bullish', 'Uptrend (Buy)', 'Very Bearish', 'Very Bullish', 'Weak Bearish', 'Weak Bullish', 'oscillator_15m', 'oscillator_1h', 'oscillator_5m', 'prophet', 'sentiment', 'strategist_total', 'trend_15m', 'trend_1h', 'trend_5m']

@@ -1,16 +1,16 @@
 """
-技术特征工程模块
+Technical Feature Engineering Module
 
-基于 Step2 的技术指标构建高级特征，用于：
-1. 规则策略的增强决策
-2. 机器学习模型训练
-3. LLM 上下文输入
+Build advanced features based on Step2 technical indicators for:
+1. Enhanced decision-making in rule-based strategies
+2. Machine learning model training
+3. LLM context input
 
-设计原则：
-- 输入：Step2 的 31 列技术指标
-- 输出：50+ 列高级特征
-- 所有特征都有明确的金融意义
-- 避免数据泄露（不使用未来数据）
+Design Principles:
+- Input: 31 columns of technical indicators from Step2
+- Output: 50+ columns of advanced features
+- All features have clear financial meaning
+- Avoid data leakage (no future data used)
 """
 
 import pandas as pd
@@ -20,9 +20,9 @@ from src.utils.logger import log
 
 
 class TechnicalFeatureEngineer:
-    """技术特征工程器"""
+    """Technical Feature Engineer"""
     
-    # 特征版本（用于追踪特征定义变更）
+    # Feature version (for tracking feature definition changes)
     FEATURE_VERSION = 'v1.0'
     
     def __init__(self):
@@ -31,56 +31,56 @@ class TechnicalFeatureEngineer:
     
     def build_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        基于技术指标构建高级特征
+        Build advanced features based on technical indicators
         
         Args:
-            df: Step2 输出的 DataFrame（含技术指标）
+            df: DataFrame output from Step2 (with technical indicators)
             
         Returns:
-            扩展后的 DataFrame（原有列 + 新增特征列）
+            Extended DataFrame (original columns + new feature columns)
             
-        特征分类：
-        1. 价格相对位置特征（8个）
-        2. 趋势强度特征（10个）
-        3. 动量特征（8个）
-        4. 波动率特征（8个）
-        5. 成交量特征（8个）
-        6. 多指标组合特征（8个）
+        Feature Categories:
+        1. Price relative position features (8)
+        2. Trend strength features (10)
+        3. Momentum features (8)
+        4. Volatility features (8)
+        5. Volume features (8)
+        6. Multi-indicator composite features (8)
         """
-        log.info(f"开始特征工程: 原始列数={len(df.columns)}")
+        log.info(f"Starting feature engineering: original columns={len(df.columns)}")
         
-        # 复制数据，避免修改原始 DataFrame
+        # Copy data to avoid modifying original DataFrame
         df_features = df.copy()
         
-        # 1. 价格相对位置特征
+        # 1. Price relative position features
         df_features = self._build_price_position_features(df_features)
         
-        # 2. 趋势强度特征
+        # 2. Trend strength features
         df_features = self._build_trend_strength_features(df_features)
         
-        # 3. 动量特征
+        # 3. Momentum features
         df_features = self._build_momentum_features(df_features)
         
-        # 4. 波动率特征
+        # 4. Volatility features
         df_features = self._build_volatility_features(df_features)
         
-        # 5. 成交量特征
+        # 5. Volume features
         df_features = self._build_volume_features(df_features)
         
-        # 6. 多指标组合特征
+        # 6. Multi-indicator composite features
         df_features = self._build_composite_features(df_features)
         
-        # 记录特征信息
+        # Record feature information
         new_features = set(df_features.columns) - set(df.columns)
         self.feature_count = len(new_features)
         self.feature_names = sorted(list(new_features))
         
         log.info(
-            f"特征工程完成: 新增特征={self.feature_count}, "
-            f"总列数={len(df_features.columns)}"
+            f"Feature engineering complete: new features={self.feature_count}, "
+            f"total columns={len(df_features.columns)}"
         )
         
-        # 添加特征元数据
+        # Add feature metadata
         df_features.attrs['feature_version'] = self.FEATURE_VERSION
         df_features.attrs['feature_count'] = self.feature_count
         df_features.attrs['feature_names'] = self.feature_names
@@ -89,31 +89,31 @@ class TechnicalFeatureEngineer:
     
     def _build_price_position_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        构建价格相对位置特征
+        Build price relative position features
         
-        金融意义：衡量当前价格在各种技术参考点的位置
+        Financial meaning: Measure current price position relative to various technical reference points
         """
-        # 1. 价格相对于移动平均线的位置
+        # 1. Price position relative to moving averages
         df['price_to_sma20_pct'] = ((df['close'] - df['sma_20']) / df['sma_20'] * 100)
         df['price_to_sma50_pct'] = ((df['close'] - df['sma_50']) / df['sma_50'] * 100)
         df['price_to_ema12_pct'] = ((df['close'] - df['ema_12']) / df['ema_12'] * 100)
         df['price_to_ema26_pct'] = ((df['close'] - df['ema_26']) / df['ema_26'] * 100)
         
-        # 2. 价格在布林带中的位置（0-100，50为中轴）
+        # 2. Price position within Bollinger Bands (0-100, 50 is middle)
         df['bb_position'] = np.where(
             (df['bb_upper'] - df['bb_lower']) > 0,
             (df['close'] - df['bb_lower']) / (df['bb_upper'] - df['bb_lower']) * 100,
-            50  # 布林带宽度为0时，认为在中轴
+            50  # When BB width is 0, consider it at middle
         )
         
-        # 3. 价格相对于 VWAP 的偏离
+        # 3. Price deviation from VWAP
         df['price_to_vwap_pct'] = np.where(
             df['vwap'] > 0,
             (df['close'] - df['vwap']) / df['vwap'] * 100,
             0
         )
         
-        # 4. 当前价格在最近 K 线高低点的位置
+        # 4. Current price position relative to recent candlestick high/low
         df['price_to_recent_high_pct'] = (
             (df['close'] - df['high'].rolling(20).max()) / 
             df['high'].rolling(20).max() * 100
@@ -127,32 +127,32 @@ class TechnicalFeatureEngineer:
     
     def _build_trend_strength_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        构建趋势强度特征
+        Build trend strength features
         
-        金融意义：衡量市场趋势的强度和方向
+        Financial meaning: Measure market trend strength and direction
         """
-        # 1. EMA 交叉强度（快线与慢线的距离）
+        # 1. EMA cross strength (distance between fast and slow lines)
         df['ema_cross_strength'] = (df['ema_12'] - df['ema_26']) / df['close'] * 100
         
-        # 2. SMA 交叉强度
+        # 2. SMA cross strength
         df['sma_cross_strength'] = (df['sma_20'] - df['sma_50']) / df['close'] * 100
         
-        # 3. MACD 动量（当前 MACD 与历史的比较）
+        # 3. MACD momentum (current MACD compared to historical)
         df['macd_momentum_5'] = df['macd'] - df['macd'].shift(5)
         df['macd_momentum_10'] = df['macd'] - df['macd'].shift(10)
         
-        # 4. 趋势一致性（EMA 和 SMA 是否同向）
+        # 4. Trend alignment (whether EMA and SMA are in same direction)
         df['trend_alignment'] = np.where(
             (df['ema_cross_strength'] > 0) & (df['sma_cross_strength'] > 0),
-            1,  # 双重上涨
+            1,  # Double bullish
             np.where(
                 (df['ema_cross_strength'] < 0) & (df['sma_cross_strength'] < 0),
-                -1,  # 双重下跌
-                0  # 方向不一致
+                -1,  # Double bearish
+                0  # Direction inconsistent
             )
         )
         
-        # 5. 价格趋势斜率（线性回归斜率）
+        # 5. Price trend slope (linear regression slope)
         def calc_slope(series):
             if len(series) < 2:
                 return 0
@@ -167,8 +167,8 @@ class TechnicalFeatureEngineer:
         df['price_slope_10'] = df['close'].rolling(10).apply(calc_slope, raw=False)
         df['price_slope_20'] = df['close'].rolling(20).apply(calc_slope, raw=False)
         
-        # 6. ADX 替代指标：方向性强度
-        # 使用价格变化的方向一致性来衡量趋势强度
+        # 6. ADX alternative indicator: directional strength
+        # Use price change direction consistency to measure trend strength
         df['directional_strength'] = (
             df['close'].diff().rolling(14).apply(
                 lambda x: (x > 0).sum() / len(x) * 100 if len(x) > 0 else 50,
@@ -180,57 +180,57 @@ class TechnicalFeatureEngineer:
     
     def _build_momentum_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        构建动量特征
+        Build momentum features
         
-        金融意义：衡量价格变化的速度和加速度
+        Financial meaning: Measure speed and acceleration of price changes
         """
-        # 1. RSI 动量（RSI 的变化率）
+        # 1. RSI momentum (rate of change of RSI)
         df['rsi_momentum_5'] = df['rsi'] - df['rsi'].shift(5)
         df['rsi_momentum_10'] = df['rsi'] - df['rsi'].shift(10)
         
-        # 2. RSI 区域（离散化）
+        # 2. RSI zone (discretized)
         df['rsi_zone'] = pd.cut(
             df['rsi'],
             bins=[0, 30, 40, 60, 70, 100],
             labels=['oversold', 'weak', 'neutral', 'strong', 'overbought']
         )
-        # 转换为数值（用于计算）
+        # Convert to numeric (for calculations)
         df['rsi_zone_numeric'] = pd.cut(
             df['rsi'],
             bins=[0, 30, 40, 60, 70, 100],
             labels=[-2, -1, 0, 1, 2]
         ).astype(float)
         
-        # 3. 价格动量（多周期收益率）
+        # 3. Price momentum (multi-period returns)
         df['return_1'] = df['close'].pct_change(1) * 100
         df['return_5'] = df['close'].pct_change(5) * 100
         df['return_10'] = df['close'].pct_change(10) * 100
         df['return_20'] = df['close'].pct_change(20) * 100
         
-        # 4. 动量加速度（收益率的变化）
+        # 4. Momentum acceleration (change in returns)
         df['momentum_acceleration'] = df['return_5'] - df['return_5'].shift(5)
         
         return df
     
     def _build_volatility_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        构建波动率特征
+        Build volatility features
         
-        金融意义：衡量市场波动性和风险
+        Financial meaning: Measure market volatility and risk
         """
-        # 1. ATR 标准化（相对于价格的波动率）
+        # 1. ATR normalized (volatility relative to price)
         df['atr_normalized'] = df['atr'] / df['close'] * 100
         
-        # 2. 布林带宽度变化
+        # 2. Bollinger Band width change
         df['bb_width_change'] = df['bb_width'] - df['bb_width'].shift(5)
         df['bb_width_pct_change'] = df['bb_width'].pct_change(5) * 100
         
-        # 3. 历史波动率（多周期标准差）
+        # 3. Historical volatility (multi-period standard deviation)
         df['volatility_5'] = df['close'].pct_change().rolling(5).std() * 100 * np.sqrt(5)
         df['volatility_10'] = df['close'].pct_change().rolling(10).std() * 100 * np.sqrt(10)
         df['volatility_20'] = df['close'].pct_change().rolling(20).std() * 100 * np.sqrt(20)
         
-        # 4. 高低点振幅趋势
+        # 4. High-low range trend
         df['hl_range_ma5'] = df['high_low_range'].rolling(5).mean()
         df['hl_range_expansion'] = df['high_low_range'] / df['hl_range_ma5']
         
@@ -238,24 +238,24 @@ class TechnicalFeatureEngineer:
     
     def _build_volume_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        构建成交量特征
+        Build volume features
         
-        金融意义：衡量市场参与度和资金流向
+        Financial meaning: Measure market participation and capital flow
         """
-        # 1. 成交量趋势
+        # 1. Volume trend
         df['volume_trend_5'] = df['volume'].rolling(5).mean() / df['volume_sma']
         df['volume_trend_10'] = df['volume'].rolling(10).mean() / df['volume_sma']
         
-        # 2. 成交量变化率
+        # 2. Volume change rate
         df['volume_change_pct'] = df['volume'].pct_change() * 100
         df['volume_acceleration'] = df['volume_change_pct'] - df['volume_change_pct'].shift(5)
         
-        # 3. 价格-成交量关系（价升量增为正向）
+        # 3. Price-volume relationship (positive when price up with volume up)
         df['price_volume_trend'] = (
             (df['volume'] * np.sign(df['close'].diff())).rolling(20).sum()
         )
         
-        # 4. OBV 趋势
+        # 4. OBV trend
         df['obv_ma20'] = df['obv'].rolling(20).mean()
         df['obv_trend'] = np.where(
             df['obv_ma20'] != 0,
@@ -263,27 +263,27 @@ class TechnicalFeatureEngineer:
             0
         )
         
-        # 5. VWAP 偏离趋势
+        # 5. VWAP deviation trend
         df['vwap_deviation_ma5'] = df['price_to_vwap_pct'].rolling(5).mean()
         
         return df
     
     def _build_composite_features(self, df: pd.DataFrame) -> pd.DataFrame:
         """
-        构建组合特征
+        Build composite features
         
-        金融意义：多个指标的综合信号
+        Financial meaning: Combined signals from multiple indicators
         """
-        # 1. 趋势确认分数（-3 到 +3）
-        # 综合 EMA、SMA、MACD 的方向
+        # 1. Trend confirmation score (-3 to +3)
+        # Combines direction of EMA, SMA, MACD
         df['trend_confirmation_score'] = (
             np.sign(df['ema_cross_strength']) +
             np.sign(df['sma_cross_strength']) +
             np.sign(df['macd'])
         )
         
-        # 2. 超买超卖综合分数
-        # 综合 RSI、布林带位置、价格偏离
+        # 2. Overbought/oversold composite score
+        # Combines RSI, BB position, price deviation
         df['overbought_score'] = (
             (df['rsi'] > 70).astype(int) +
             (df['bb_position'] > 80).astype(int) +
@@ -295,50 +295,50 @@ class TechnicalFeatureEngineer:
             (df['price_to_sma20_pct'] < -5).astype(int)
         )
         
-        # 3. 市场强度指标
-        # 综合趋势强度、成交量、波动率
+        # 3. Market strength indicator
+        # Combines trend strength, volume, volatility
         df['market_strength'] = (
             abs(df['ema_cross_strength']) * 
             df['volume_ratio'] * 
             (1 + df['atr_normalized'] / 100)
         )
         
-        # 4. 风险信号
-        # 高波动 + 低流动性 = 高风险
+        # 4. Risk signal
+        # High volatility + low liquidity = high risk
         df['risk_signal'] = (
             df['volatility_20'] * 
             (1 / df['volume_ratio'].replace(0, 1))
         )
         
-        # 5. 反转可能性分数
-        # RSI极值 + 布林带突破 + MACD背离
+        # 5. Reversal probability score
+        # RSI extreme + BB breakout + MACD divergence
         df['reversal_probability'] = (
             ((df['rsi'] > 80) | (df['rsi'] < 20)).astype(int) * 2 +
             ((df['bb_position'] > 95) | (df['bb_position'] < 5)).astype(int) * 2 +
-            (df['macd_momentum_5'] * df['macd'] < 0).astype(int)  # MACD 背离
+            (df['macd_momentum_5'] * df['macd'] < 0).astype(int)  # MACD divergence
         )
         
-        # 6. 趋势持续性分数
-        # 趋势方向一致 + 成交量配合 + 波动率适中
+        # 6. Trend sustainability score
+        # Trend direction consistent + volume support + moderate volatility
         df['trend_sustainability'] = (
             abs(df['trend_confirmation_score']) * 
             np.clip(df['volume_ratio'], 0.5, 2) *
-            (1 - np.clip(df['volatility_20'] / 10, 0, 1))  # 波动率过高降低持续性
+            (1 - np.clip(df['volatility_20'] / 10, 0, 1))  # High volatility reduces sustainability
         )
         
         return df
     
     def get_feature_importance_groups(self) -> Dict[str, List[str]]:
         """
-        返回特征的重要性分组
+        Return feature importance groups
         
-        用于：
-        1. 特征选择
-        2. 模型训练时的特征权重
-        3. LLM 上下文构建时的优先级
+        Used for:
+        1. Feature selection
+        2. Feature weights during model training
+        3. Priority when building LLM context
         """
         return {
-            'critical': [  # 核心特征（必须使用）
+            'critical': [  # Core features (must use)
                 'price_to_sma20_pct',
                 'ema_cross_strength',
                 'macd',
@@ -348,7 +348,7 @@ class TechnicalFeatureEngineer:
                 'volume_ratio',
                 'atr_normalized'
             ],
-            'important': [  # 重要特征（建议使用）
+            'important': [  # Important features (recommended)
                 'price_to_sma50_pct',
                 'sma_cross_strength',
                 'macd_momentum_5',
@@ -358,7 +358,7 @@ class TechnicalFeatureEngineer:
                 'trend_sustainability',
                 'market_strength'
             ],
-            'supplementary': [  # 辅助特征（可选）
+            'supplementary': [  # Supplementary features (optional)
                 'price_slope_20',
                 'directional_strength',
                 'return_10',
@@ -372,40 +372,40 @@ class TechnicalFeatureEngineer:
     
     def get_feature_descriptions(self) -> Dict[str, str]:
         """
-        返回特征的描述（用于文档和 LLM 理解）
+        Return feature descriptions (for documentation and LLM understanding)
         """
         return {
-            # 价格位置特征
-            'price_to_sma20_pct': '价格相对20日均线的偏离百分比',
-            'price_to_sma50_pct': '价格相对50日均线的偏离百分比',
-            'bb_position': '价格在布林带中的位置(0-100)',
-            'price_to_vwap_pct': '价格相对成交量加权均价的偏离',
+            # Price position features
+            'price_to_sma20_pct': 'Price deviation percentage from 20-day MA',
+            'price_to_sma50_pct': 'Price deviation percentage from 50-day MA',
+            'bb_position': 'Price position within Bollinger Bands (0-100)',
+            'price_to_vwap_pct': 'Price deviation from volume-weighted average price',
             
-            # 趋势特征
-            'ema_cross_strength': 'EMA12与EMA26的交叉强度',
-            'sma_cross_strength': 'SMA20与SMA50的交叉强度',
-            'trend_confirmation_score': '多指标趋势确认分数(-3到+3)',
-            'trend_sustainability': '趋势持续性评分',
+            # Trend features
+            'ema_cross_strength': 'EMA12 and EMA26 cross strength',
+            'sma_cross_strength': 'SMA20 and SMA50 cross strength',
+            'trend_confirmation_score': 'Multi-indicator trend confirmation score (-3 to +3)',
+            'trend_sustainability': 'Trend sustainability score',
             
-            # 动量特征
-            'rsi_momentum_5': 'RSI的5期动量',
-            'return_10': '10期收益率',
-            'momentum_acceleration': '动量加速度',
+            # Momentum features
+            'rsi_momentum_5': '5-period RSI momentum',
+            'return_10': '10-period return rate',
+            'momentum_acceleration': 'Momentum acceleration',
             
-            # 波动率特征
-            'atr_normalized': 'ATR标准化（相对价格的波动率）',
-            'volatility_20': '20期历史波动率',
-            'bb_width_change': '布林带宽度变化',
+            # Volatility features
+            'atr_normalized': 'Normalized ATR (volatility relative to price)',
+            'volatility_20': '20-period historical volatility',
+            'bb_width_change': 'Bollinger Band width change',
             
-            # 成交量特征
-            'volume_ratio': '当前成交量相对均值',
-            'obv_trend': 'OBV趋势指标',
-            'price_volume_trend': '价格-成交量趋势',
+            # Volume features
+            'volume_ratio': 'Current volume relative to average',
+            'obv_trend': 'OBV trend indicator',
+            'price_volume_trend': 'Price-volume trend',
             
-            # 组合特征
-            'market_strength': '市场强度综合指标',
-            'overbought_score': '超买综合评分(0-3)',
-            'oversold_score': '超卖综合评分(0-3)',
-            'reversal_probability': '反转可能性评分',
-            'risk_signal': '风险信号（波动率×流动性倒数）'
+            # Composite features
+            'market_strength': 'Market strength composite indicator',
+            'overbought_score': 'Overbought composite score (0-3)',
+            'oversold_score': 'Oversold composite score (0-3)',
+            'reversal_probability': 'Reversal probability score',
+            'risk_signal': 'Risk signal (volatility × inverse liquidity)'
         }

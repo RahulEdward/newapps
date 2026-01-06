@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\backtest\report.py
+# hypothesis_version: 6.149.1
+
+[100, 500, '%Y-%m-%d', '[]', 'action', 'close', 'drawdown', 'drawdown_pct', 'equity', 'labels', 'pnl', 'pnl-negative', 'pnl-positive', 'pnl_pct', 'reports', 'total_equity', 'utf-8', 'w']

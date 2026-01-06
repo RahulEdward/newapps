@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\agents\quant_analyst_agent.py
+# hypothesis_version: 6.149.1
+
+[-0.05, -0.01, 0.0, 1e-10, 0.01, 0.05, -100, 100, 200, '15m', '1h', '5m', 'atr_15m', 'atr_1h', 'atr_5m', 'bearish_alignment', 'binance_funding', 'bullish_alignment', 'close', 'details', 'ema_status', 'fuel_score', 'fuel_signal', 'fuel_strength', 'funding_rate', 'has_data', 'high', 'is_proxy', 'kdj_j', 'long', 'low', 'moderate', 'neutral', 'oi_change_24h', 'oi_change_24h_pct', 'oi_fuel', 'osc_15m_score', 'osc_1h_score', 'osc_5m_score', 'oscillator', 'oscillator_15m', 'oscillator_1h', 'oscillator_5m', 'overall_score', 'regime', 'rsi_value', 'score', 'sentiment', 'short', 'signal', 'strong', 'timeframe_2h', 'timeframe_30m', 'timeframe_6h', 'total_osc_score', 'total_trend_score', 'trend', 'trend_15m', 'trend_15m_score', 'trend_1h', 'trend_1h_score', 'trend_5m', 'trend_5m_score', 'volatility', 'volume', 'weak', 'whale_trap_risk']

@@ -1,5 +1,5 @@
 """
-日志与监控模块 - 兼容 PostgreSQL (Railway) 和 SQLite (Local)
+Logging and Monitoring Module - Compatible with PostgreSQL (Railway) and SQLite (Local)
 """
 import os
 import json
@@ -11,27 +11,27 @@ from src.utils.logger import log
 
 
 class TradingLogger:
-    """交易日志记录器 (支持 Postgres & SQLite)"""
+    """Trading Logger (supports Postgres & SQLite)"""
     
     def __init__(self, db_path: str = "logs/trading.db"):
-        # 1. 尝试从环境变量获取数据库地址 (Railway 会自动注入 DATABASE_URL)
+        # 1. Try to get database URL from environment variable (Railway auto-injects DATABASE_URL)
         self.db_url = os.getenv("DATABASE_URL")
         self.is_postgres = False
         
-        # 2. 如果没有 DATABASE_URL，则回退到本地 SQLite
+        # 2. If no DATABASE_URL, fall back to local SQLite
         if not self.db_url:
             self.db_path = Path(db_path)
             self.db_path.parent.mkdir(parents=True, exist_ok=True)
             self.db_url = f"sqlite:///{self.db_path}"
             log.info(f"⚠️ DATABASE_URL not found, using local SQLite: {self.db_path}")
         else:
-            # 修正 URL 格式 (SQLAlchemy 需要 postgresql://)
+            # Fix URL format (SQLAlchemy requires postgresql://)
             if self.db_url.startswith("postgres://"):
                 self.db_url = self.db_url.replace("postgres://", "postgresql://", 1)
             self.is_postgres = True
             log.info("✅ DATABASE_URL detected, connecting to PostgreSQL...")
 
-        # 3. 初始化数据库引擎
+        # 3. Initialize database engine
         try:
             self.engine = create_engine(self.db_url)
             self._init_database()
@@ -41,17 +41,17 @@ class TradingLogger:
             raise e
     
     def _init_database(self):
-        """初始化数据库表结构"""
-        # 检查表是否存在
+        """Initialize database table structure"""
+        # Check if tables exist
         insp = inspect(self.engine)
         
-        # 针对不同数据库的自增主键语法
+        # Auto-increment primary key syntax for different databases
         if self.is_postgres:
             id_type = "SERIAL"
         else:
             id_type = "INTEGER PRIMARY KEY AUTOINCREMENT"
         
-        # 定义建表 SQL
+        # Define table creation SQL
         tables = {
             "decisions": f"""
                 CREATE TABLE IF NOT EXISTS decisions (
@@ -122,14 +122,14 @@ class TradingLogger:
             """
         }
 
-        # 执行建表
+        # Execute table creation
         with self.engine.begin() as conn:
             for table_name, sql in tables.items():
                 if not insp.has_table(table_name):
                     conn.execute(text(sql))
 
     def log_decision(self, decision: Dict, market_context: Dict, risk_result: tuple):
-        """记录决策"""
+        """Record decision"""
         is_valid, modified_decision, risk_message = risk_result
         
         sql = text('''
@@ -164,7 +164,7 @@ class TradingLogger:
         log.info(f"Decision recorded: {decision.get('action')}")
     
     def log_execution(self, execution_result: Dict):
-        """记录执行结果"""
+        """Record execution result"""
         sql = text('''
             INSERT INTO executions (
                 timestamp, symbol, action, success,
@@ -192,7 +192,7 @@ class TradingLogger:
         log.info(f"Execution recorded: {execution_result.get('action')}")
     
     def open_trade(self, trade_info: Dict):
-        """开启新交易"""
+        """Open new trade"""
         sql = text('''
             INSERT INTO trades (
                 open_time, symbol, side, entry_price, quantity, leverage, status
@@ -211,9 +211,9 @@ class TradingLogger:
             })
     
     def close_trade(self, symbol: str, exit_price: float, pnl: float):
-        """关闭交易"""
+        """Close trade"""
         with self.engine.begin() as conn:
-            # 1. 查找最近的未关闭交易
+            # 1. Find the most recent unclosed trade
             select_sql = text('''
                 SELECT id, entry_price FROM trades
                 WHERE symbol = :symbol AND status = 'OPEN'
@@ -225,7 +225,7 @@ class TradingLogger:
                 trade_id, entry_price = result
                 pnl_pct = ((exit_price - entry_price) / entry_price) * 100
                 
-                # 2. 更新交易状态
+                # 2. Update trade status
                 update_sql = text('''
                     UPDATE trades
                     SET close_time = :close_time, exit_price = :exit_price, 
@@ -242,7 +242,7 @@ class TradingLogger:
                 })
     
     def log_performance(self, performance: Dict):
-        """记录性能指标"""
+        """Record performance metrics"""
         sql = text('''
             INSERT INTO performance (
                 timestamp, total_trades, winning_trades, losing_trades,
@@ -265,7 +265,7 @@ class TradingLogger:
             })
     
     def get_recent_decisions(self, limit: int = 10) -> List[Dict]:
-        """获取最近的决策"""
+        """Get recent decisions"""
         sql = text('SELECT * FROM decisions ORDER BY id DESC LIMIT :limit')
         
         with self.engine.connect() as conn:
@@ -273,7 +273,7 @@ class TradingLogger:
             return [dict(row._mapping) for row in result]
     
     def get_trade_statistics(self) -> Dict:
-        """获取交易统计"""
+        """Get trade statistics"""
         with self.engine.connect() as conn:
             total_trades = conn.execute(text("SELECT COUNT(*) FROM trades WHERE status = 'CLOSED'")).scalar() or 0
             winning_trades = conn.execute(text("SELECT COUNT(*) FROM trades WHERE status = 'CLOSED' AND pnl > 0")).scalar() or 0

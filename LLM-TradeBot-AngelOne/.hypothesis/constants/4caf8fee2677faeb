@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\llm\gemini_client.py
+# hypothesis_version: 6.149.1
+
+['Content-Type', 'application/json', 'assistant', 'candidates', 'candidatesTokenCount', 'completion_tokens', 'content', 'contents', 'gemini', 'gemini-1.5-flash', 'generationConfig', 'maxOutputTokens', 'max_tokens', 'model', 'parts', 'promptTokenCount', 'prompt_tokens', 'role', 'system', 'systemInstruction', 'temperature', 'text', 'totalTokenCount', 'total_tokens', 'usageMetadata']

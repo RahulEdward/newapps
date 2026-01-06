@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\agents\reflection_agent.py
+# hypothesis_version: 6.149.1
+
+[0.0, 0.7, 100, 120, 200, 1500, '%Y%m%d_%H%M%S', '%Y-%m-%d %H:%M:%S', '**Losing Patterns**:', '**Recommendations**:', 'N/A', 'No summary available', 'Parse error', 'UNKNOWN', 'Unable to parse', '```', '```json', 'action', 'api_key', 'api_keys', 'base_url', 'close_price', 'deepseek', 'deepseek-chat', 'dummy-key-will-fail', 'entry_price', 'exit_price', 'losing_conditions', 'market_insights', 'model', 'patterns', 'pnl', 'pnl_pct', 'provider', 'realized_pnl', 'recommendations', 'saver', 'side', 'summary', 'symbol', 'time', 'timeout', 'timestamp', 'winning_conditions']

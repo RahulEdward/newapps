@@ -1,0 +1,4 @@
+# file: D:\llm-desktop\LLM-TradeBot-AngelOne\src\llm\openai_client.py
+# hypothesis_version: 6.149.1
+
+['Authorization', 'Content-Type', 'application/json', 'choices', 'content', 'gpt-4o', 'max_tokens', 'message', 'messages', 'model', 'openai', 'temperature', 'usage']

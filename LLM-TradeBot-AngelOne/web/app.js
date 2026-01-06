@@ -14,7 +14,9 @@ async function apiFetch(url, options = {}) {
 }
 
 // 🌐 Language Management (exposed to window for global access)
-window.currentLang = localStorage.getItem('language') || 'en';
+// Force English only - clear any old Chinese language setting
+localStorage.setItem('language', 'en');
+window.currentLang = 'en';
 
 // 🎯 Demo Mode Tracking (moved to top to avoid TDZ error)
 let demoExpiredShown = false;

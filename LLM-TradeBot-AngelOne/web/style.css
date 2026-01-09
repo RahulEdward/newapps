@@ -926,13 +926,13 @@ tr:first-child td {
     display: flex;
     flex-direction: column;
     flex: 1.2;
-    min-height: 250px;
+    min-height: auto;
 }
 
 .row-logs>.card {
     flex: 1;
-    min-height: 0;
-    overflow: hidden;
+    min-height: auto;
+    overflow: visible;
 }
 
 
@@ -1090,33 +1090,34 @@ tr:first-child td {
 
 /* --- Agent Documentation Sidebar --- */
 .split-log-view {
+    display: flex !important;
     flex-direction: row !important;
-    align-items: stretch;
+    align-items: stretch !important;
     gap: 0;
     padding: 0;
-    height: 600px;
-    /* Fixed height to ensure alignment */
+    min-height: 350px;
+    height: auto;
 }
 
 .agent-docs-sidebar {
-    min-width: 320px;
-    max-width: 320px;
+    min-width: 280px;
+    max-width: 280px;
     background: rgba(0, 0, 0, 0.2);
     border-right: 1px solid var(--glass-border);
-    padding: 20px;
+    padding: 12px;
     overflow-y: auto;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     color: var(--text-secondary);
     display: flex;
     flex-direction: column;
-    gap: 20px;
-    height: 100%;
+    gap: 8px;
 }
 
 
 .agent-doc-item {
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    padding-bottom: 15px;
+    padding-bottom: 8px;
+    margin-bottom: 4px;
 }
 
 .agent-doc-item:last-child {
@@ -1124,30 +1125,32 @@ tr:first-child td {
 }
 
 .agent-doc-item h4 {
-    margin: 0 0 8px 0;
+    margin: 0 0 3px 0;
     color: var(--neon-blue);
-    font-size: 0.95rem;
+    font-size: 0.8rem;
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 4px;
 }
 
 .agent-doc-item p.role {
-    margin: 0 0 10px 0;
+    margin: 0 0 4px 0;
     font-style: italic;
     color: #cbd5e0;
-    line-height: 1.4;
+    line-height: 1.2;
+    font-size: 0.7rem;
 }
 
 .agent-doc-item ul {
     margin: 0;
-    padding-left: 18px;
+    padding-left: 14px;
     color: #a0aec0;
 }
 
 .agent-doc-item li {
-    margin-bottom: 6px;
-    line-height: 1.3;
+    margin-bottom: 2px;
+    line-height: 1.15;
+    font-size: 0.65rem;
 }
 
 .agent-doc-item strong {
@@ -1196,22 +1199,28 @@ tr:first-child td {
     display: flex !important;
     flex-direction: row !important;
     align-items: stretch !important;
-    height: 800px !important;
-    /* Increased height for better visibility */
-    overflow: hidden !important;
+    min-height: 350px !important;
+    height: auto !important;
+    overflow: visible !important;
     box-sizing: border-box;
     padding: 0 !important;
 }
 
-.agent-docs-sidebar {
-    flex: 0 0 320px !important;
-    height: 800px !important;
-    /* Match parent container */
-    max-height: 800px !important;
-    overflow-y: auto;
-    /* Scroll when content overflows */
+.compound-body.split-log-view .agent-docs-sidebar {
+    flex: 0 0 280px !important;
+    height: auto !important;
+    max-height: none !important;
+    overflow-y: visible !important;
     box-sizing: border-box;
-    padding: 20px;
+    padding: 12px;
+}
+
+#logs-container {
+    flex: 1 !important;
+    padding: 15px;
+    background: transparent;
+    min-height: 300px;
+    overflow-y: auto;
 }
 
 /* Left sidebar scrollbar style */

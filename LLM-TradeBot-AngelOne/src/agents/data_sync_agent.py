@@ -90,11 +90,64 @@ class DataSyncAgent:
             client: AngelOneClient or BinanceClient instance
             symbol: Default trading symbol (e.g., "RELIANCE-EQ" for NSE, "BTCUSDT" for Binance)
         """
-        self.client = client
+        self._init_client = client  # Store initial client (may be None)
         self.default_symbol = symbol
         
         # Detect client type
         self._is_angelone = isinstance(client, AngelOneClient) if client else False
+    
+    @property
+    def client(self):
+        """Get active client - checks global_state.exchange_client if init client is None"""
+        from src.server.state import global_state
+        
+        # If we have an init client, use it
+        if self._init_client is not None:
+            return self._init_client
+        
+        # Otherwise check global_state for broker client (set when user connects via UI)
+        if hasattr(global_state, 'exchange_client') and global_state.exchange_client is not None:
+            log.info(f"Using global_state.exchange_client: {type(global_state.exchange_client)}")
+            return global_state.exchange_client
+        
+        log.warning("No client available - _init_client is None and global_state.exchange_client is None")
+        return None
+    
+    @client.setter
+    def client(self, value):
+        """Set the client"""
+        self._init_client = value
+        
+    def _init_websocket(self):
+        """Initialize WebSocket manager if needed (called lazily)"""
+        if hasattr(self, '_ws_initialized'):
+            return
+        self._ws_initialized = True
+        
+        # WebSocket manager (optional)
+        import os
+        self.use_websocket = os.getenv("USE_WEBSOCKET", "false").lower() == "true"
+        self.ws_manager = None
+        self._initial_load_complete = False
+        
+        # WebSocket only for Binance (AngelOne uses different WebSocket)
+        if self.use_websocket and not self._is_angelone and BinanceClient:
+            try:
+                from src.api.binance_websocket import BinanceWebSocketManager
+                self.ws_manager = BinanceWebSocketManager(
+                    symbol=self.default_symbol or "BTCUSDT",
+                    timeframes=['5m', '15m', '1h']
+                )
+                self.ws_manager.start()
+                log.info("🚀 WebSocket data stream enabled")
+            except Exception as e:
+                log.warning(f"WebSocket startup failed, falling back to REST API: {e}")
+                self.use_websocket = False
+        else:
+            log.info("📡 Using REST API mode")
+        
+        self.last_snapshot = None
+        log.info("🕵️ The Oracle (DataSync Agent) initialized")
         
         # WebSocket manager (optional)
         import os
@@ -139,10 +192,30 @@ class DataSyncAgent:
         start_time = datetime.now()
         symbol = symbol or self.default_symbol or "RELIANCE-EQ"
         
+        # Check if client is available
+        active_client = self.client
+        if active_client is None:
+            log.warning(f"[{symbol}] No broker connected - waiting for connection")
+            raise Exception("Not connected to AngelOne. Call connect() first.")
+        
+        # Check if client is connected (for BrokerClientWrapper)
+        if hasattr(active_client, 'is_connected') and not active_client.is_connected:
+            log.warning(f"[{symbol}] Broker disconnected - waiting for reconnection")
+            raise Exception("Not connected to AngelOne. Call connect() first.")
+        
+        # Detect client type dynamically
+        is_angelone = not (BinanceClient and isinstance(active_client, BinanceClient))
+        
+        log.info(f"[{symbol}] Fetching data using {'AngelOne' if is_angelone else 'Binance'} client")
+        
+        # Initialize WebSocket if not done yet
+        if not hasattr(self, '_ws_initialized'):
+            self._init_websocket()
+        
         use_rest_fallback = False
         
         # WebSocket mode: Get data from cache (Binance only)
-        if self.use_websocket and self.ws_manager and self._initial_load_complete and not self._is_angelone:
+        if self.use_websocket and self.ws_manager and self._initial_load_complete and not is_angelone:
             # Get data from WebSocket cache
             k5m = self.ws_manager.get_klines('5m', limit)
             k15m = self.ws_manager.get_klines('15m', limit)
@@ -157,29 +230,29 @@ class DataSyncAgent:
                 # Still need to fetch external data asynchronously
                 q_data = await quant_client.fetch_coin_data(symbol)
                 loop = asyncio.get_event_loop()
-                b_funding = await self.client.get_funding_rate_with_cache(symbol)
+                b_funding = await active_client.get_funding_rate_with_cache(symbol)
                 b_oi = {}  # Mock empty OI
 
-        if not self.use_websocket or not self.ws_manager or not self._initial_load_complete or use_rest_fallback or self._is_angelone:
+        if not self.use_websocket or not self.ws_manager or not self._initial_load_complete or use_rest_fallback or is_angelone:
             # REST API mode or first load / fallback mode / AngelOne
             loop = asyncio.get_event_loop()
             
-            if self._is_angelone:
+            if is_angelone:
                 # AngelOne: Use synchronous calls wrapped in executor
                 tasks = [
                     loop.run_in_executor(
                         None,
-                        self.client.get_klines,
+                        active_client.get_klines,
                         symbol, '5m', limit
                     ),
                     loop.run_in_executor(
                         None,
-                        self.client.get_klines,
+                        active_client.get_klines,
                         symbol, '15m', limit
                     ),
                     loop.run_in_executor(
                         None,
-                        self.client.get_klines,
+                        active_client.get_klines,
                         symbol, '1h', limit
                     ),
                 ]
@@ -197,23 +270,23 @@ class DataSyncAgent:
                 tasks = [
                     loop.run_in_executor(
                         None,
-                        self.client.get_klines,
+                        active_client.get_klines,
                         symbol, '5m', limit
                     ),
                     loop.run_in_executor(
                         None,
-                        self.client.get_klines,
+                        active_client.get_klines,
                         symbol, '15m', limit
                     ),
                     loop.run_in_executor(
                         None,
-                        self.client.get_klines,
+                        active_client.get_klines,
                         symbol, '1h', limit
                     ),
                     quant_client.fetch_coin_data(symbol),
                     loop.run_in_executor(
                         None,
-                        self.client.get_funding_rate_with_cache,
+                        active_client.get_funding_rate_with_cache,
                         symbol
                     ),
                 ]

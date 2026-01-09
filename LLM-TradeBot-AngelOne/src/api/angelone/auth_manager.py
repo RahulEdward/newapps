@@ -51,8 +51,8 @@ class AuthManager:
     MAX_RETRIES_EXCEEDED = "AUTH_005"
     
     # Configuration
-    MAX_RETRIES = 3
-    RETRY_DELAYS = [1, 2, 4]  # Exponential backoff in seconds
+    MAX_RETRIES = 1  # Single attempt, no retry to avoid confusion
+    RETRY_DELAYS = [1]  # Not used with single attempt
     TOKEN_EXPIRY_BUFFER = 300  # 5 minutes buffer before expiry
     
     def __init__(

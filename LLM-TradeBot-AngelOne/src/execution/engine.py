@@ -28,13 +28,33 @@ class ExecutionEngine:
         client: Union[AngelOneClient, 'BinanceClient'], 
         risk_manager: RiskManager
     ):
-        self.client = client
+        self._init_client = client  # Store initial client (may be None)
         self.risk_manager = risk_manager
         
         # Detect client type
-        self._is_angelone = isinstance(client, AngelOneClient)
+        self._is_angelone = isinstance(client, AngelOneClient) if client else False
         
         log.info("🚀 The Executor (Execution Engine) initialized")
+    
+    @property
+    def client(self):
+        """Get active client - checks global_state.exchange_client if init client is None"""
+        from src.server.state import global_state
+        
+        # If we have an init client, use it
+        if self._init_client is not None:
+            return self._init_client
+        
+        # Otherwise check global_state for broker client (set when user connects via UI)
+        if global_state.exchange_client is not None:
+            return global_state.exchange_client
+        
+        return None
+    
+    @client.setter
+    def client(self, value):
+        """Set the client"""
+        self._init_client = value
     
     def execute_decision(
         self,

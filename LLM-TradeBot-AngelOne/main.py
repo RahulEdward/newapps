@@ -200,29 +200,14 @@ class MultiAgentTradingBot:
         # Initialize clients - AngelOne for Indian market
         self.market_hours = MarketHoursManager()
         
-        # AngelOne client - use config or demo mode
-        angelone_config = self.config.get('angelone', {})
-        api_key = angelone_config.get('api_key', '') or os.environ.get('ANGELONE_API_KEY', '')
-        client_code = angelone_config.get('client_code', '') or os.environ.get('ANGELONE_CLIENT_CODE', '')
-        password = angelone_config.get('password', '') or os.environ.get('ANGELONE_PASSWORD', '')
-        totp_secret = angelone_config.get('totp_secret', '') or os.environ.get('ANGELONE_TOTP_SECRET', '')
+        # AngelOne client - credentials from database (set via UI)
+        # Client will be set when user connects via dashboard
+        self._init_client = None  # Will be set from global_state.exchange_client when broker connects
+        self.demo_mode = True  # Start in demo mode, switch when broker connects
+        print("  💡 Connect to AngelOne broker from Dashboard to enable live trading")
         
-        # If no credentials, use demo mode with mock client
-        if not api_key or not client_code:
-            print("  ⚠️ AngelOne credentials not configured - running in DEMO mode")
-            print("  💡 Configure credentials in app settings to connect to broker")
-            self.client = None  # Will use mock/demo data
-            self.demo_mode = True
-        else:
-            self.client = AngelOneClient(
-                api_key=api_key,
-                client_code=client_code,
-                password=password,
-                totp_secret=totp_secret
-            )
-            self.demo_mode = False
         self.risk_manager = RiskManager()
-        self.execution_engine = ExecutionEngine(self.client, self.risk_manager)
+        self.execution_engine = ExecutionEngine(self._init_client, self.risk_manager)
         self.saver = DataSaver() # ✅ Initialize Multi-Agent data saver
 
         # 💰 Persistent Virtual Account (Test Mode)
@@ -297,6 +282,24 @@ class MultiAgentTradingBot:
         else:
             global_state.trade_history = []
             print("  🧪 Test mode: No history loaded, showing only current session")
+
+    @property
+    def client(self):
+        """Get active client - checks global_state.exchange_client if init client is None"""
+        # If we have an init client, use it
+        if self._init_client is not None:
+            return self._init_client
+        
+        # Otherwise check global_state for broker client (set when user connects via UI)
+        if global_state.exchange_client is not None:
+            return global_state.exchange_client
+        
+        return None
+    
+    @client.setter
+    def client(self, value):
+        """Set the client"""
+        self._init_client = value
 
     def _reload_symbols(self):
         """Reload trading symbols from environment/config without restart"""
@@ -651,7 +654,7 @@ class MultiAgentTradingBot:
             
             # LOG 1: Oracle
             global_state.add_log(f"[🕵️ ORACLE] Data ready: ${current_price:,.2f}")
-            global_state.current_price = current_price
+            global_state.current_price[self.current_symbol] = current_price  # Store as dict keyed by symbol
             
             # Step 2: Strategist
             print("[Step 2/4] 👨‍🔬 The Strategist (QuantAnalyst) - Analyzing data...")
@@ -2220,12 +2223,29 @@ class MultiAgentTradingBot:
                 
                 # We update even if Paused, to see PnL of open positions
                 try:
-                    acc = self.client.get_futures_account()
+                    # Get client from property (checks global_state.exchange_client)
+                    active_client = self.client
+                    if active_client is None:
+                        time.sleep(5)
+                        continue
                     
-                    wallet = float(acc.get('total_wallet_balance', 0))
-                    pnl = float(acc.get('total_unrealized_profit', 0))
-                    avail = float(acc.get('available_balance', 0))
-                    equity = wallet + pnl
+                    # Check if client has get_account method (BrokerClientWrapper)
+                    if hasattr(active_client, 'get_account'):
+                        acc = active_client.get_account()
+                        wallet = float(acc.get('totalBalance', 0))
+                        pnl = float(acc.get('totalUnrealizedProfit', 0))
+                        avail = float(acc.get('availableBalance', 0))
+                        equity = wallet + pnl
+                    # Check if client has get_futures_account method (Binance)
+                    elif hasattr(active_client, 'get_futures_account'):
+                        acc = active_client.get_futures_account()
+                        wallet = float(acc.get('total_wallet_balance', 0))
+                        pnl = float(acc.get('total_unrealized_profit', 0))
+                        avail = float(acc.get('available_balance', 0))
+                        equity = wallet + pnl
+                    else:
+                        time.sleep(5)
+                        continue
                     
                     global_state.update_account(equity, avail, wallet, pnl)
                     global_state.record_account_success()  # Track success
@@ -2257,8 +2277,18 @@ class MultiAgentTradingBot:
         self.start_account_monitor()
         
         # 🔮 Start Prophet auto-trainer (retrain every 2 hours)
+        # Only start if broker is connected (not in demo mode)
         from src.models.prophet_model import ProphetAutoTrainer, HAS_LIGHTGBM
-        if HAS_LIGHTGBM:
+        
+        # Check if client is available AND connected
+        client_ready = (
+            self.client is not None and 
+            not self.demo_mode and 
+            hasattr(self.client, 'is_connected') and 
+            self.client.is_connected
+        )
+        
+        if HAS_LIGHTGBM and client_ready:
             # Create auto-trainer for primary trading pair
             primary_agent = self.predict_agents[self.primary_symbol]
             self.auto_trainer = ProphetAutoTrainer(
@@ -2269,6 +2299,9 @@ class MultiAgentTradingBot:
                 symbol=self.primary_symbol
             )
             self.auto_trainer.start()
+        else:
+            self.auto_trainer = None
+            log.info("🔮 Prophet auto-trainer disabled (broker not connected)")
         
         # Set initial interval (CLI parameter takes priority, API can override later)
         global_state.cycle_interval = interval_minutes
@@ -2358,6 +2391,13 @@ class MultiAgentTradingBot:
                 global_state.add_log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
                 global_state.add_log(f"[📊 SYSTEM] Cycle #{cycle_num} | {', '.join(self.symbols)}")
 
+                # 🔌 Check if broker is connected before starting cycle
+                if self.client is None:
+                    print("⚠️ Broker not connected - waiting for connection...")
+                    global_state.add_log("[⚠️ SYSTEM] Broker not connected - please connect from Settings > Accounts")
+                    time.sleep(5)
+                    continue
+
                 # 🎯 Reset cycle position counter
                 global_state.cycle_positions_opened = 0
                 
@@ -2371,6 +2411,7 @@ class MultiAgentTradingBot:
                     # Analyze each symbol first without executing OPEN actions
                     result = asyncio.run(self.run_trading_cycle(analyze_only=True))
                     
+                    # Get latest price for this symbol
                     latest_prices[symbol] = global_state.current_price.get(symbol, 0)
                     
                     print(f"  [{symbol}] Result: {result['status']}")

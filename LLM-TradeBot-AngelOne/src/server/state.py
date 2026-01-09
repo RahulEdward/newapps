@@ -78,6 +78,9 @@ class SharedState:
     last_reflection: Optional[Dict] = None
     last_reflection_text: Optional[str] = None
     
+    # Broker Client (set when user connects via UI)
+    exchange_client: Any = None
+    
     def update_market(self, symbol: str, price: float, regime: str, position: str):
         self.current_price[symbol] = price
         self.market_regime[symbol] = regime
@@ -272,3 +275,7 @@ global_state = SharedState()
 global_state.start_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 # Auto-register the sink
 global_state.register_log_sink()
+
+# Add startup log
+global_state.add_log("[📊 SYSTEM] Dashboard initialized - Ready for trading")
+global_state.add_log("[🔗 BROKER] Connect to AngelOne from Settings > Accounts")

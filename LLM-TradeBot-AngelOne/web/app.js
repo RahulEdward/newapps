@@ -238,16 +238,30 @@ function updateDashboard() {
             let activeAccount = data.account;
             let activePositions = data.positions || [];
 
-            if (data.system && data.system.is_test_mode && data.virtual_account) {
-                // Construct account object compatible with renderAccount
+            // Check if broker is connected (real account data)
+            const brokerConnected = data.broker && data.broker.connected;
+            const hasRealAccount = data.account && data.account.is_real;
+
+            if (brokerConnected || hasRealAccount) {
+                // Real broker account data - use INR format
+                activeAccount = {
+                    total_equity: data.account.total_equity || 0,
+                    wallet_balance: data.account.wallet_balance || data.account.total_equity || 0,
+                    available_balance: data.account.available_balance || 0,
+                    total_pnl: data.account.total_pnl || 0,
+                    initial_balance: data.account.wallet_balance || data.account.total_equity || 0,
+                    is_inr: true  // Flag for INR currency
+                };
+            } else if (data.system && data.system.is_test_mode && data.virtual_account) {
+                // Test mode with virtual account (no broker connected)
                 const va = data.virtual_account;
                 const unrealized = va.total_unrealized_pnl || 0;
                 activeAccount = {
                     total_equity: va.current_balance + unrealized,
                     wallet_balance: va.current_balance,
-                    available_balance: va.available_balance || va.current_balance,  // Available balance = funds - positions
+                    available_balance: va.available_balance || va.current_balance,
                     total_pnl: unrealized,
-                    initial_balance: va.initial_balance // ✅ Explicitly pass Initial Balance
+                    initial_balance: va.initial_balance
                 };
 
                 // Convert virtual positions dict to array for UI
@@ -270,17 +284,11 @@ function updateDashboard() {
 
             // Determine Initial Amount for Chart Baseline
             let initialAmount = null;
-            if (data.system && data.system.is_test_mode && data.virtual_account) {
+            if (brokerConnected || hasRealAccount) {
+                initialAmount = activeAccount.wallet_balance;
+            } else if (data.system && data.system.is_test_mode && data.virtual_account) {
                 initialAmount = data.virtual_account.initial_balance;
             } else if (activeAccount) {
-                // For live, use wallet_balance (Realized Equity) roughly as baseline, 
-                // OR if we had a stored 'starting_balance' in backend.
-                // Ideally simply using the first point of the day would be better, 
-                // but here we use Wallet Balance as the "Center" anchor if no specific starting point.
-                // Actually, let's try to trust the first point of the chart if this is null?
-                // No, user specifically asked for "Initial Amount". In Test it's clear.
-                // In Live, it changes. Let's use Wallet Balance as the "0 PnL" line for current active positions?
-                // Yes, Wallet Balance = Equity - Unrealized PnL. So Equity fluctuates around Wallet Balance.
                 initialAmount = activeAccount.wallet_balance;
             }
 
@@ -568,7 +576,10 @@ function renderDecisionTable(history, positions = []) {
 }
 
 function renderAccount(account) {
-    const fmt = num => `$${num.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    // Currency format based on account type
+    const isINR = account.is_inr === true;
+    const currencySymbol = isINR ? '₹' : '$';
+    const fmt = num => `${currencySymbol}${num.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
     // Safety check helper
     const setTxt = (id, val) => {
@@ -754,6 +765,10 @@ initChart();
 setInterval(updateDashboard, 2000); // Poll every 2s
 updateDashboard();
 
+// Initialize symbol selectors with default stocks on page load
+updateSymbolSelector();
+updateDecisionFilter();
+
 // Note: Control button event listeners moved to setupEventListeners() at end of file
 // Symbol Selector - handled directly in index.html by TradingView loader
 // (K-Line chart now dynamically reloads on symbol change)
@@ -863,16 +878,29 @@ function renderDecision(decision) {
 // 🆕 Update K-Line Symbol Selector dynamically
 function updateSymbolSelector(symbols) {
     const selector = document.getElementById('symbol-selector');
-    if (!selector || !symbols || symbols.length === 0) return;
+    if (!selector) return;
+
+    // Default Indian stocks if no symbols provided
+    const defaultStocks = [
+        'RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK',
+        'SBIN', 'BHARTIARTL', 'ITC', 'KOTAKBANK', 'AXISBANK',
+        'HINDUNILVR', 'LT', 'BAJFINANCE', 'MARUTI', 'ASIANPAINT',
+        'TITAN', 'SUNPHARMA', 'WIPRO', 'HCLTECH', 'ULTRACEMCO',
+        'TATAMOTORS', 'TATASTEEL', 'POWERGRID', 'NTPC', 'ONGC',
+        'COALINDIA', 'JSWSTEEL', 'ADANIENT', 'ADANIPORTS', 'TECHM'
+    ];
+
+    // Use provided symbols or default stocks
+    const stockList = (symbols && symbols.length > 0) ? symbols : defaultStocks;
 
     // Get current selection
     const currentSymbol = selector.value;
 
     // Store symbols globally for reference
-    window.activeSymbols = symbols;
+    window.activeSymbols = stockList;
 
     // Build new options
-    const options = symbols.map(symbol => {
+    const options = stockList.map(symbol => {
         // Format display name for Indian stocks
         const displayName = symbol;
         return `<option value="${symbol}">${displayName}</option>`;
@@ -882,7 +910,7 @@ function updateSymbolSelector(symbols) {
     selector.innerHTML = options;
 
     // Restore previous selection if it still exists
-    if (symbols.includes(currentSymbol)) {
+    if (stockList.includes(currentSymbol)) {
         selector.value = currentSymbol;
         // Still load chart on first call even if symbol was preserved
         if (!window.chartSymbolInitialized && typeof loadTradingViewChart === 'function') {
@@ -891,9 +919,9 @@ function updateSymbolSelector(symbols) {
         }
     } else {
         // Default to first symbol and reload chart
-        selector.value = symbols[0];
+        selector.value = stockList[0];
         if (typeof loadTradingViewChart === 'function') {
-            loadTradingViewChart(symbols[0]);
+            loadTradingViewChart(stockList[0]);
             window.chartSymbolInitialized = true;
         }
     }
@@ -902,7 +930,16 @@ function updateSymbolSelector(symbols) {
 // 🆕 Update Decision Filter Symbol Selector dynamically
 function updateDecisionFilter(symbols) {
     const filterSelector = document.getElementById('filter-symbol');
-    if (!filterSelector || !symbols || symbols.length === 0) return;
+    if (!filterSelector) return;
+
+    // Default Indian stocks if no symbols provided
+    const defaultStocks = [
+        'RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK',
+        'SBIN', 'BHARTIARTL', 'ITC', 'KOTAKBANK', 'AXISBANK'
+    ];
+
+    // Use provided symbols or default stocks
+    const stockList = (symbols && symbols.length > 0) ? symbols : defaultStocks;
 
     // Get current selection
     const currentFilter = filterSelector.value;
@@ -910,7 +947,7 @@ function updateDecisionFilter(symbols) {
     // Build new options (always keep "All Symbols" as first option)
     const options = ['<option value="all">All Symbols</option>'];
 
-    symbols.forEach(symbol => {
+    stockList.forEach(symbol => {
         // Format display name for Indian stocks
         const displayName = symbol;
         options.push(`<option value="${symbol}">${displayName}</option>`);
@@ -932,26 +969,41 @@ function renderLogs(logs) {
     const container = document.getElementById('logs-container');
     if (!container) return;
 
+    // Debug: Log how many logs received
+    console.log('📋 Logs received:', logs ? logs.length : 0);
+
     // Smart Scroll: Check if user is near bottom before update
     const isScrolledToBottom = container.scrollHeight - container.clientHeight <= container.scrollTop + 100;
     const previousScrollTop = container.scrollTop;
 
-    // Get current log mode from global state (default: simplified)
-    const logMode = window.logMode || 'simplified';
+    // If no logs, show a message
+    if (!logs || logs.length === 0) {
+        container.innerHTML = '<div class="log-entry" style="color: #a0aec0;">📋 No logs yet. Start trading or connect broker to see activity.</div>';
+        return;
+    }
 
-    // Filter logs based on mode
-    const filteredLogs = logMode === 'simplified'
-        ? logs.filter(logLine => {
+    // Get current log mode from global state (default: detailed to show all logs)
+    const logMode = window.logMode || 'detailed';
+
+    // In detailed mode, show ALL logs without filtering
+    const filteredLogs = logMode === 'detailed' ? logs : logs.filter(logLine => {
             // Strip ANSI colors for filtering
             const cleanLine = logLine.replace(/\x1b\[[0-9;]*m/g, '');
 
-            // 🎯 Simplified Mode: Show only Agent Summaries + Warnings/Errors
+            // 🎯 Simplified Mode: Show important logs
 
             // 1. Always show WARNING and ERROR
             if (cleanLine.includes('WARNING') ||
                 cleanLine.includes('ERROR') ||
                 cleanLine.includes('⚠️') ||
-                cleanLine.includes('❌')) {
+                cleanLine.includes('❌') ||
+                cleanLine.includes('✅') ||
+                cleanLine.includes('🔐') ||
+                cleanLine.includes('🔌') ||
+                cleanLine.includes('💰') ||
+                cleanLine.includes('📊') ||
+                cleanLine.includes('🤖') ||
+                cleanLine.includes('🧪')) {
                 return true;
             }
 
@@ -966,21 +1018,13 @@ function renderLogs(logs) {
                 cleanLine.includes('[⚖️ CRITIC]') ||
                 cleanLine.includes('[🛡️ GUARDIAN]') ||
                 cleanLine.includes('[🚀 EXECUTOR]') ||
-                cleanLine.includes('[🧠 REFLECTION]')
+                cleanLine.includes('[🧠 REFLECTION]') ||
+                cleanLine.includes('Broker') ||
+                cleanLine.includes('AngelOne') ||
+                cleanLine.includes('LLM')
             );
 
-            const hasResultIndicator = (
-                cleanLine.includes('✅') ||
-                cleanLine.includes('❌') ||
-                cleanLine.includes('⚠️') ||
-                cleanLine.includes('PASS') ||
-                cleanLine.includes('FAIL') ||
-                cleanLine.includes('BLOCK') ||
-                cleanLine.includes('VETO')
-            );
-
-            // Show if it's an agent line with a result
-            if (hasAgentTag && hasResultIndicator) {
+            if (hasAgentTag) {
                 return true;
             }
 
@@ -1002,8 +1046,13 @@ function renderLogs(logs) {
             }
 
             return false;
-        })
-        : logs; // Show all logs in detailed mode
+        });
+
+    // If all logs were filtered out, show a message
+    if (filteredLogs.length === 0) {
+        container.innerHTML = '<div class="log-entry" style="color: #a0aec0;">📋 No matching logs. Try switching to Detailed mode.</div>';
+        return;
+    }
 
     container.innerHTML = filteredLogs.map(logLine => {
         // Strip ANSI colors
@@ -1090,7 +1139,7 @@ function renderLogs(logs) {
 }
 
 // Initialize log mode toggle
-window.logMode = 'simplified'; // Default mode
+window.logMode = 'detailed'; // Default mode - show all logs
 
 // Add event listener for log mode toggle button
 document.addEventListener('DOMContentLoaded', function () {
@@ -1571,8 +1620,8 @@ function setupEventListeners() {
     // 🆕 Log Mode Toggle
     const logModeToggle = document.getElementById('log-mode-toggle');
     if (logModeToggle) {
-        // Initialize log mode from localStorage or default to 'simplified'
-        window.logMode = localStorage.getItem('logMode') || 'simplified';
+        // Initialize log mode from localStorage or default to 'detailed'
+        window.logMode = localStorage.getItem('logMode') || 'detailed';
         updateLogModeUI();
 
         logModeToggle.addEventListener('click', () => {

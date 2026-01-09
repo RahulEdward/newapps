@@ -5,12 +5,13 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>LLM-TradeBot Dashboard</title>
-    <link rel="stylesheet" href="/static/style.css?v=46">
+    <link rel="stylesheet" href="/static/style.css?v=49">
     <link rel="stylesheet" href="/static/style-enhancements.css?v=3">
     <link
         href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600&display=swap"
         rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://unpkg.com/lightweight-charts@4.1.0/dist/lightweight-charts.standalone.production.js"></script>
     <script src="/static/i18n.js"></script>
 </head>
 
@@ -21,46 +22,48 @@
             <div class="logo">
                 <span class="icon">🤖</span>
                 <div class="logo-text">
-                    <h1>LLM-TradeBot</h1>
-                    <span class="tagline">Adversarial Decision Framework</span>
+                    <h1 style="font-size: 1.2rem; margin: 0; white-space: nowrap;">LLM-TradeBot</h1>
+                    <span class="tagline" style="font-size: 0.65rem;">AngelOne Edition</span>
                 </div>
-
             </div>
             <div class="status-indicators">
-                <div class="controls">
-                    <!-- Settings Button - Elegant Text Style -->
-                    <button id="btn-settings" class="btn-settings-elegant" title="Settings">
-                        <span class="settings-icon">⚙️</span>
-                        <span class="settings-text" data-i18n="btn.settings">Settings</span>
+                <div class="controls" style="display: flex; align-items: center; gap: 6px; flex-wrap: nowrap;">
+                    <!-- Settings Button -->
+                    <button id="btn-settings" class="btn-header" title="Settings">
+                        ⚙️ Settings
+                    </button>
+
+                    <!-- Connect Broker Button -->
+                    <button id="btn-connect-broker" class="btn-header btn-connect" title="Connect Broker">
+                        🔗 <span id="broker-status-text">Connect</span>
+                    </button>
+
+                    <!-- Test Broker Button -->
+                    <button id="btn-test-broker-top" class="btn-header" title="Test Broker Connection" style="display: none;">
+                        🧪 Test
                     </button>
 
                     <!-- Backtest Button -->
-                    <a href="/static/backtest.html" class="btn-settings-elegant" title="Backtest"
-                        style="text-decoration: none; margin-left: 10px;">
-                        <span class="settings-icon">🔬</span>
-                        <span class="settings-text" data-i18n="btn.backtest">Backtest</span>
+                    <a href="/static/backtest.html" class="btn-header" title="Backtest" style="text-decoration: none;">
+                        🔬 Backtest
                     </a>
 
-                    <!-- Logout Button -->
-                    <button id="btn-logout" class="btn-settings-elegant" title="Logout" style="margin-left: 10px;"
-                        onclick="window.logout()">
-                        <span class="settings-icon">🚪</span>
-                        <span class="settings-text" data-i18n="btn.logout">Exit</span>
+                    <!-- Exit Button -->
+                    <button id="btn-logout" class="btn-header" title="Logout" onclick="window.logout()">
+                        🚪 Exit
                     </button>
 
-                    <button id="btn-start" class="btn-control start" title="Start Trading"
-                        onclick="if(window.setControl) window.setControl('start');">▶</button>
-                    <button id="btn-pause" class="btn-control pause" title="Pause Trading"
-                        onclick="if(window.setControl) window.setControl('pause');">⏸</button>
-                    <button id="btn-stop" class="btn-control stop" title="Stop System"
-                        onclick="if(window.setControl) window.setControl('stop');">⏹</button>
+                    <!-- Control Buttons -->
+                    <button id="btn-start" class="btn-control start" title="Start" onclick="if(window.setControl) window.setControl('start');">▶</button>
+                    <button id="btn-pause" class="btn-control pause" title="Pause" onclick="if(window.setControl) window.setControl('pause');">⏸</button>
+                    <button id="btn-stop" class="btn-control stop" title="Stop" onclick="if(window.setControl) window.setControl('stop');">⏹</button>
 
-                    <select id="interval-selector" class="interval-selector" title="Cycle Interval">
-                        <option value="0.5">30 sec</option>
-                        <option value="1">1 min</option>
-                        <option value="3" selected>3 min</option>
-                        <option value="5">5 min</option>
-                        <option value="15">15 min</option>
+                    <select id="interval-selector" class="interval-selector" title="Cycle Interval" style="padding: 4px 8px; font-size: 0.75rem;">
+                        <option value="0.5">30s</option>
+                        <option value="1">1m</option>
+                        <option value="3" selected>3m</option>
+                        <option value="5">5m</option>
+                        <option value="15">15m</option>
                         <option value="30">30 min</option>
                         <option value="60">1 hour</option>
                     </select>
@@ -101,47 +104,9 @@
                             </select>
                         </div>
                     </div>
-                    <div class="kline-container-wrapper">
-                        <div class="tradingview-widget-container">
-                            <div id="tradingview_b8265"></div>
-                            <script type="text/javascript" src="https://s3.tradingview.com/tv.js"></script>
-                            <script type="text/javascript">
-                                // Dynamic TradingView loader
-                                let tvWidget = null;
-                                let chartInitialized = false;
-
-                                function loadTradingViewChart(symbol) {
-                                    if (!symbol) return;
-                                    const container = document.getElementById('tradingview_b8265');
-                                    container.innerHTML = ''; // Clear old chart
-                                    tvWidget = new TradingView.widget({
-                                        "width": "100%",
-                                        "height": "100%",
-                                        "symbol": "NSE:" + symbol,
-                                        "interval": "5",
-                                        "timezone": "Asia/Kolkata",
-                                        "theme": "dark",
-                                        "style": "1",
-                                        "locale": "en",
-                                        "toolbar_bg": "#f1f3f6",
-                                        "enable_publishing": false,
-                                        "hide_top_toolbar": true,
-                                        "save_image": false,
-                                        "container_id": "tradingview_b8265"
-                                    });
-                                    chartInitialized = true;
-                                }
-
-                                // Wait for API to return configured trading pairs before initializing
-                                // (triggered by updateSymbolSelector in app.js)
-
-                                // Listen for selector changes
-                                document.getElementById('symbol-selector').addEventListener('change', function (e) {
-                                    if (e.target.value) {
-                                        loadTradingViewChart(e.target.value);
-                                    }
-                                });
-                            </script>
+                    <div class="kline-container-wrapper" style="min-height: 300px;">
+                        <div class="tradingview-widget-container" style="position: relative; width: 100%; height: 300px;">
+                            <div id="tradingview_b8265" style="width: 100%; height: 300px; background: rgba(0,0,0,0.2); border-radius: 8px;"></div>
                         </div>
                     </div>
                 </div>
@@ -532,6 +497,13 @@
                                 href="https://aistudio.google.com" target="_blank"
                                 style="color: #00ff9d">aistudio.google.com</a></p>
                     </div>
+
+                    <!-- Save LLM Settings Button -->
+                    <button id="btn-save-llm-settings" 
+                        style="margin-top: 15px; background: linear-gradient(135deg, #00ff9d 0%, #00d4aa 100%); color: #1a202c; border: none; padding: 10px 24px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">
+                        💾 Save LLM Settings
+                    </button>
+                    <p id="llm-save-status" style="color: #48bb78; font-size: 0.8em; margin-top: 5px; display: none;"></p>
                 </div>
 
                 <!-- Tab: Trading -->
@@ -651,108 +623,72 @@
 
                 <!-- Tab: Accounts -->
                 <div id="tab-accounts" class="tab-pane">
+                    <!-- Broker Connection Status -->
                     <div class="form-group">
-                        <div
-                            style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
-                            <label style="margin:0;">📊 Trading Accounts</label>
-                            <button id="btn-refresh-accounts" class="btn-sm"
-                                style="background:#2d3748;color:white;border:none;padding:4px 12px;border-radius:4px;cursor:pointer;">🔄
-                                Refresh</button>
-                        </div>
-                        <div id="accounts-list"
-                            style="background: rgba(0,0,0,0.2); padding: 10px; border-radius: 4px; min-height: 100px; max-height: 200px; overflow-y: auto;">
-                            <p style="color: #718096; text-align: center;">Loading accounts...</p>
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom: 10px;">
+                            <label style="margin:0;">🔗 AngelOne Broker Connection</label>
+                            <span id="broker-connection-status" style="padding: 4px 12px; border-radius: 4px; font-size: 0.85em; background: #e53e3e; color: white;">Disconnected</span>
                         </div>
                     </div>
 
-                    <hr style="border-color: rgba(255,255,255,0.1); margin: 20px 0;">
-
+                    <!-- Broker Credentials -->
                     <div class="form-group">
-                        <label>➕ Add New Account</label>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                            <input type="text" id="new-account-id" class="form-control"
-                                placeholder="Account ID (e.g. sub-account-1)">
-                            <input type="text" id="new-account-name" class="form-control" placeholder="Display Name">
-                        </div>
-                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px;">
-                            <select id="new-account-exchange" class="form-control">
-                                <option value="angelone">AngelOne</option>
-                            </select>
-                            <label style="display:flex; align-items:center; cursor:pointer;">
-                                <input type="checkbox" id="new-account-testnet" checked style="margin-right: 8px;">
-                                <span>Testnet Mode</span>
-                            </label>
-                        </div>
-                        <button id="btn-add-account"
-                            style="margin-top: 10px; background: #00ff9d; color: #1a202c; border: none; padding: 8px 20px; border-radius: 4px; cursor: pointer; font-weight: bold;">Add
-                            Account</button>
-                        <p style="color: #a0aec0; font-size: 0.75em; margin-top: 8px;">Note: Set API keys in .env with
-                            format: ACCOUNT_{ID}_API_KEY</p>
+                        <label>📋 Client ID</label>
+                        <input type="text" id="broker-client-id" class="form-control" placeholder="Your AngelOne Client ID (e.g., LLVR1277)">
                     </div>
+                    
+                    <div class="form-group">
+                        <label>🔑 API Key</label>
+                        <input type="password" id="broker-api-key" class="form-control" placeholder="Your AngelOne API Key">
+                        <p style="color: #718096; font-size: 0.7em; margin-top: 2px;">Get API Key from <a href="https://smartapi.angelone.in/" target="_blank" style="color: #00ff9d">smartapi.angelone.in</a></p>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>🔐 PIN</label>
+                        <input type="password" id="broker-pin" class="form-control" placeholder="Your Trading PIN">
+                    </div>
+
+                    <button id="btn-save-broker-creds" 
+                        style="margin-top: 10px; background: #00ff9d; color: #1a202c; border: none; padding: 10px 24px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">
+                        💾 Save Credentials
+                    </button>
+
+                    <button id="btn-test-broker" 
+                        style="margin-top: 10px; background: #4299e1; color: white; border: none; padding: 10px 24px; border-radius: 4px; cursor: pointer; font-weight: bold; width: 100%;">
+                        🧪 Test Connection
+                    </button>
+                    <div id="broker-test-result" style="margin-top: 10px; padding: 10px; border-radius: 4px; display: none; font-size: 0.85em;"></div>
+
                 </div>
             </div>
 
             <div class="modal-footer">
-                <button id="btn-save-settings" class="btn btn-primary"
-                    style="position:relative; z-index:9999; cursor:pointer;" onclick="(async function(e) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                        const btn = e.target;
-                        const originalText = btn.textContent;
-                        btn.textContent = 'Saving...';
-                        btn.disabled = true;
+                <button id="btn-close-settings" class="btn btn-secondary"
+                    style="cursor:pointer; background: #4a5568; color: #fff; border: none; padding: 10px 20px; border-radius: 4px;"
+                    onclick="document.getElementById('settings-modal').style.display = 'none';">Close</button>
+            </div>
+        </div>
+    </div>
 
-                        try {
-                            const elApiKey = document.getElementById('cfg-angelone-api-key');
-                            const elClientCode = document.getElementById('cfg-angelone-client-code');
-                            const elPassword = document.getElementById('cfg-angelone-password');
-                            const elTotp = document.getElementById('cfg-angelone-totp');
-                            const elDeepseekKey = document.getElementById('cfg-deepseek-key');
-                            
-                            const data = {
-                                api_keys: {
-                                    angelone_api_key: elApiKey ? elApiKey.value : '',
-                                    angelone_client_code: elClientCode ? elClientCode.value : '',
-                                    angelone_password: elPassword ? elPassword.value : '',
-                                    angelone_totp_secret: elTotp ? elTotp.value : '',
-                                    deepseek_api_key: elDeepseekKey ? elDeepseekKey.value : ''
-                                },
-                                trading: {
-                                    symbol: Array.from(document.querySelectorAll('input[name=\'cfg-symbol\']:checked')).map(cb => cb.value).join(','),
-                                    leverage: document.getElementById('cfg-leverage').value,
-                                    run_mode: document.getElementById('cfg-run-mode').value
-                                }
-                            };
-                            
-                            // Save Config - CRITICAL: credentials: 'include' for Railway HTTPS
-                            const res = await fetch('/api/config', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify(data),
-                                credentials: 'include'
-                            });
-                            if (!res.ok) throw new Error(await res.text());
-
-                            // Save Prompt - CRITICAL: credentials: 'include' for Railway HTTPS
-                            const promptContent = document.getElementById('cfg-prompt').value;
-                            const promptRes = await fetch('/api/config/prompt', {
-                                method: 'POST',
-                                headers: { 'Content-Type': 'application/json' },
-                                body: JSON.stringify({ content: promptContent }),
-                                credentials: 'include'
-                            });
-                            if (!promptRes.ok) throw new Error(await promptRes.text());
-                            
-                            alert('✅ SUCCESS: Configuration Saved!');
-                            document.getElementById('settings-modal').style.display = 'none';
-
-                        } catch (err) {
-                            alert('❌ ERROR: ' + err.message);
-                        } finally {
-                            btn.textContent = originalText;
-                            btn.disabled = false;
-                        }
-                    })(event)">Save Changes</button>
+    <!-- TOTP Connect Modal -->
+    <div id="totp-modal" class="modal-overlay" style="display: none;">
+        <div class="modal-content" style="width: 400px; background: #1a202c; border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+            <div class="modal-header" style="padding: 15px 20px; border-bottom: 1px solid rgba(255,255,255,0.1);">
+                <h3 style="margin: 0; color: #fff;">🔐 Connect to AngelOne</h3>
+                <button id="close-totp-modal" class="btn-close" style="background: none; border: none; color: #a0aec0; font-size: 24px; cursor: pointer;">×</button>
+            </div>
+            <div style="padding: 20px;">
+                <p style="color: #a0aec0; margin-bottom: 15px;">Enter your TOTP code from Google Authenticator or any TOTP app:</p>
+                <div class="form-group">
+                    <label style="color: #a0aec0;">TOTP Code</label>
+                    <input type="text" id="totp-code" class="form-control" placeholder="Enter 6-digit TOTP" maxlength="6" 
+                        style="font-size: 1.5em; text-align: center; letter-spacing: 8px; padding: 15px;">
+                </div>
+                <button id="btn-connect-with-totp" 
+                    style="width: 100%; margin-top: 15px; background: linear-gradient(135deg, #00ff9d 0%, #00d4aa 100%); color: #1a202c; border: none; padding: 12px 24px; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 1.1em;">
+                    🔗 Connect Broker
+                </button>
+                <p id="totp-error" style="color: #e53e3e; margin-top: 10px; display: none;"></p>
             </div>
         </div>
     </div>
@@ -880,7 +816,38 @@
             text-align: right;
             background: rgba(0, 0, 0, 0.2);
         }
-    </style>
+
+        /* Header Button Styles */
+        .btn-header {
+            padding: 6px 12px;
+            font-size: 0.75rem;
+            background: rgba(45, 55, 72, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 6px;
+            color: #e2e8f0;
+            cursor: pointer;
+            transition: all 0.2s;
+            white-space: nowrap;
+        }
+        .btn-header:hover {
+            background: rgba(74, 85, 104, 0.8);
+            border-color: rgba(255, 255, 255, 0.2);
+        }
+        .btn-connect {
+            background: linear-gradient(135deg, #00ff9d 0%, #00d4aa 100%);
+            color: #1a202c;
+            font-weight: 600;
+        }
+        .btn-connect:hover {
+            background: linear-gradient(135deg, #00d4aa 0%, #00b894 100%);
+        }
+        .btn-control {
+            width: 28px;
+            height: 28px;
+            padding: 0;
+            font-size: 0.8rem;
+            border-radius: 4px;
+        }
     </style>
     <script src="/static/app.js?v=railway_auth_fix_v3"></script>
     <script>
@@ -898,6 +865,7 @@
                         e.preventDefault();
                         e.stopPropagation();
                         modal.style.display = 'flex';
+                        loadBrokerCredentials();
                         if (typeof loadSettings === 'function') {
                             loadSettings().then(() => {
                                 // Sync UI after load for current mode
@@ -960,6 +928,581 @@
                     llmProviderSel.addEventListener('change', updateLlmUI);
                     updateLlmUI(); // Initial call
                 }
+
+                // 5. LLM Settings Save/Load
+                async function loadLLMSettings() {
+                    try {
+                        const res = await fetch('/api/llm/settings', { credentials: 'include' });
+                        const data = await res.json();
+                        
+                        if (data.llm_provider) {
+                            const providerSel = document.getElementById('cfg-llm-provider');
+                            if (providerSel) {
+                                providerSel.value = data.llm_provider;
+                                // Trigger change to show correct API key field
+                                providerSel.dispatchEvent(new Event('change'));
+                            }
+                        }
+                        
+                        // Show masked keys in placeholders
+                        const keyMap = {
+                            'deepseek': 'cfg-deepseek-key',
+                            'openai': 'cfg-openai-key',
+                            'claude': 'cfg-claude-key',
+                            'qwen': 'cfg-qwen-key',
+                            'gemini': 'cfg-gemini-key'
+                        };
+                        
+                        for (const [provider, inputId] of Object.entries(keyMap)) {
+                            const input = document.getElementById(inputId);
+                            const savedKey = data[`${provider}_api_key`];
+                            if (input && savedKey) {
+                                input.placeholder = savedKey + ' (saved)';
+                            }
+                        }
+                    } catch (err) {
+                        console.error('Failed to load LLM settings:', err);
+                    }
+                }
+
+                const saveLLMBtn = document.getElementById('btn-save-llm-settings');
+                if (saveLLMBtn) {
+                    saveLLMBtn.onclick = async function() {
+                        const provider = document.getElementById('cfg-llm-provider').value;
+                        
+                        // Get the API key for selected provider
+                        const keyMap = {
+                            'deepseek': 'cfg-deepseek-key',
+                            'openai': 'cfg-openai-key',
+                            'claude': 'cfg-claude-key',
+                            'qwen': 'cfg-qwen-key',
+                            'gemini': 'cfg-gemini-key'
+                        };
+                        
+                        const apiKeyInput = document.getElementById(keyMap[provider]);
+                        const apiKey = apiKeyInput ? apiKeyInput.value.trim() : '';
+                        
+                        if (!apiKey) {
+                            alert('Please enter the API key for ' + provider.toUpperCase());
+                            return;
+                        }
+                        
+                        // Don't save if it's a masked value
+                        if (apiKey.includes('...')) {
+                            alert('API key already saved. Enter a new key to update.');
+                            return;
+                        }
+                        
+                        this.textContent = '⏳ Saving...';
+                        this.disabled = true;
+                        
+                        try {
+                            const res = await fetch('/api/llm/settings', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ llm_provider: provider, api_key: apiKey }),
+                                credentials: 'include'
+                            });
+                            
+                            const statusEl = document.getElementById('llm-save-status');
+                            
+                            if (res.ok) {
+                                if (statusEl) {
+                                    statusEl.textContent = '✅ LLM settings saved! Restart may be required.';
+                                    statusEl.style.display = 'block';
+                                    statusEl.style.color = '#48bb78';
+                                }
+                                // Clear the input and update placeholder
+                                apiKeyInput.value = '';
+                                apiKeyInput.placeholder = apiKey.substring(0, 4) + '...' + apiKey.slice(-4) + ' (saved)';
+                            } else {
+                                const data = await res.json();
+                                if (statusEl) {
+                                    statusEl.textContent = '❌ Error: ' + (data.detail || 'Failed to save');
+                                    statusEl.style.display = 'block';
+                                    statusEl.style.color = '#e53e3e';
+                                }
+                            }
+                        } catch (err) {
+                            const statusEl = document.getElementById('llm-save-status');
+                            if (statusEl) {
+                                statusEl.textContent = '❌ Error: ' + err.message;
+                                statusEl.style.display = 'block';
+                                statusEl.style.color = '#e53e3e';
+                            }
+                        } finally {
+                            this.textContent = '💾 Save LLM Settings';
+                            this.disabled = false;
+                        }
+                    };
+                }
+
+                // Load LLM settings on page load
+                loadLLMSettings();
+
+                // ==================== BROKER CONNECTION LOGIC ====================
+                
+                // Load broker status and credentials on page load
+                checkBrokerStatus();
+                loadBrokerCredentials();  // Auto-load saved credentials
+
+                // Connect Broker Button
+                const connectBrokerBtn = document.getElementById('btn-connect-broker');
+                const totpModal = document.getElementById('totp-modal');
+                const closeTotpBtn = document.getElementById('close-totp-modal');
+                const connectWithTotpBtn = document.getElementById('btn-connect-with-totp');
+                const saveBrokerCredsBtn = document.getElementById('btn-save-broker-creds');
+
+                if (connectBrokerBtn) {
+                    connectBrokerBtn.onclick = async function() {
+                        const status = await checkBrokerStatus();
+                        if (status.is_connected) {
+                            // Disconnect
+                            if (confirm('Disconnect from broker?')) {
+                                await disconnectBroker();
+                            }
+                        } else if (status.has_credentials) {
+                            // Show TOTP modal
+                            totpModal.style.display = 'flex';
+                            document.getElementById('totp-code').value = '';
+                            document.getElementById('totp-code').focus();
+                        } else {
+                            // Open settings to add credentials
+                            alert('Please save your broker credentials first in Settings > Accounts');
+                            modal.style.display = 'flex';
+                            // Switch to accounts tab
+                            document.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+                            document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+                            document.querySelector('[data-tab="tab-accounts"]').classList.add('active');
+                            document.getElementById('tab-accounts').classList.add('active');
+                        }
+                    };
+                }
+
+                if (closeTotpBtn) {
+                    closeTotpBtn.onclick = () => totpModal.style.display = 'none';
+                }
+
+                if (connectWithTotpBtn) {
+                    connectWithTotpBtn.onclick = async function() {
+                        const totp = document.getElementById('totp-code').value.trim();
+                        if (!totp || totp.length !== 6) {
+                            document.getElementById('totp-error').textContent = 'Please enter a valid 6-digit TOTP code';
+                            document.getElementById('totp-error').style.display = 'block';
+                            return;
+                        }
+
+                        this.textContent = '⏳ Connecting...';
+                        this.disabled = true;
+
+                        try {
+                            const res = await fetch('/api/broker/connect', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ totp: totp }),
+                                credentials: 'include'
+                            });
+
+                            const data = await res.json();
+                            if (res.ok) {
+                                totpModal.style.display = 'none';
+                                alert('✅ Connected to AngelOne successfully!');
+                                checkBrokerStatus();
+                            } else {
+                                document.getElementById('totp-error').textContent = data.detail || 'Connection failed';
+                                document.getElementById('totp-error').style.display = 'block';
+                            }
+                        } catch (err) {
+                            document.getElementById('totp-error').textContent = 'Connection error: ' + err.message;
+                            document.getElementById('totp-error').style.display = 'block';
+                        } finally {
+                            this.textContent = '🔗 Connect Broker';
+                            this.disabled = false;
+                        }
+                    };
+                }
+
+                if (saveBrokerCredsBtn) {
+                    saveBrokerCredsBtn.onclick = async function() {
+                        const clientId = document.getElementById('broker-client-id').value.trim();
+                        const apiKey = document.getElementById('broker-api-key').value.trim();
+                        const pin = document.getElementById('broker-pin').value.trim();
+
+                        if (!clientId || !apiKey || !pin) {
+                            alert('Please fill all fields: Client ID, API Key, and PIN');
+                            return;
+                        }
+
+                        this.textContent = '⏳ Saving...';
+                        this.disabled = true;
+
+                        try {
+                            const res = await fetch('/api/broker/credentials', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ client_id: clientId, api_key: apiKey, pin: pin }),
+                                credentials: 'include'
+                            });
+
+                            if (res.ok) {
+                                alert('✅ Credentials saved successfully!');
+                                checkBrokerStatus();
+                            } else {
+                                const data = await res.json();
+                                alert('❌ Error: ' + (data.detail || 'Failed to save'));
+                            }
+                        } catch (err) {
+                            alert('❌ Error: ' + err.message);
+                        } finally {
+                            this.textContent = '💾 Save Credentials';
+                            this.disabled = false;
+                        }
+                    };
+                }
+
+                // Test Broker Connection Button (Settings modal)
+                const testBrokerBtn = document.getElementById('btn-test-broker');
+                if (testBrokerBtn) {
+                    testBrokerBtn.onclick = async function() {
+                        const resultDiv = document.getElementById('broker-test-result');
+                        this.textContent = '⏳ Testing...';
+                        this.disabled = true;
+                        resultDiv.style.display = 'block';
+                        resultDiv.style.background = '#2d3748';
+                        resultDiv.innerHTML = '🔄 Running tests...';
+
+                        try {
+                            const res = await fetch('/api/broker/test', { credentials: 'include' });
+                            const data = await res.json();
+                            
+                            let html = '';
+                            if (data.connected) {
+                                html += '<div style="color: #48bb78;">✅ Broker Connected</div>';
+                                
+                                if (data.account) {
+                                    html += `<div style="color: #a0aec0;">💰 Account: Net ₹${data.account.totalBalance?.toFixed(2) || 0}</div>`;
+                                }
+                                
+                                if (data.ltp && data.ltp.price > 0) {
+                                    html += `<div style="color: #a0aec0;">📈 LTP: RELIANCE ₹${data.ltp.price?.toFixed(2) || 0}</div>`;
+                                } else {
+                                    html += '<div style="color: #ecc94b;">⚠️ LTP: No price data</div>';
+                                }
+                                
+                                if (data.historical && data.historical.count > 0) {
+                                    html += `<div style="color: #a0aec0;">📊 Historical: ${data.historical.count} candles</div>`;
+                                } else {
+                                    html += '<div style="color: #ecc94b;">⚠️ Historical: No data</div>';
+                                }
+                                
+                                if (data.errors && data.errors.length > 0) {
+                                    html += '<div style="color: #e53e3e; margin-top: 5px;">Errors:</div>';
+                                    data.errors.forEach(e => {
+                                        html += `<div style="color: #fc8181; font-size: 0.8em;">• ${e}</div>`;
+                                    });
+                                }
+                                
+                                resultDiv.style.background = '#1c4532';
+                            } else {
+                                html = '<div style="color: #e53e3e;">❌ Broker not connected</div>';
+                                html += '<div style="color: #a0aec0; font-size: 0.85em;">Please connect first using TOTP</div>';
+                                resultDiv.style.background = '#742a2a';
+                            }
+                            
+                            resultDiv.innerHTML = html;
+                        } catch (err) {
+                            resultDiv.style.background = '#742a2a';
+                            resultDiv.innerHTML = `<div style="color: #e53e3e;">❌ Test failed: ${err.message}</div>`;
+                        } finally {
+                            this.textContent = '🧪 Test Connection';
+                            this.disabled = false;
+                        }
+                    };
+                }
+
+                // Test Broker Button (Top bar)
+                const testBrokerTopBtn = document.getElementById('btn-test-broker-top');
+                if (testBrokerTopBtn) {
+                    testBrokerTopBtn.onclick = async function() {
+                        this.textContent = '⏳...';
+                        this.disabled = true;
+                        
+                        try {
+                            const res = await fetch('/api/broker/test', { credentials: 'include' });
+                            const data = await res.json();
+                            
+                            let msg = '';
+                            if (data.connected) {
+                                msg = '✅ Broker Connected\n\n';
+                                msg += `💰 Account: Net ₹${data.account?.totalBalance?.toFixed(2) || 0}\n`;
+                                msg += `💵 Available: ₹${data.account?.availableBalance?.toFixed(2) || 0}\n`;
+                                msg += `📈 LTP: RELIANCE ₹${data.ltp?.price?.toFixed(2) || 0}\n`;
+                                msg += `📊 Historical: ${data.historical?.count || 0} candles`;
+                                if (data.errors && data.errors.length > 0) {
+                                    msg += '\n\n⚠️ Errors:\n• ' + data.errors.join('\n• ');
+                                }
+                            } else {
+                                msg = '❌ Broker not connected\n\nPlease connect first using TOTP';
+                            }
+                            alert(msg);
+                        } catch (err) {
+                            alert('❌ Test failed: ' + err.message);
+                        } finally {
+                            this.textContent = '🧪 Test';
+                            this.disabled = false;
+                        }
+                    };
+                }
+
+                // Helper functions
+                async function checkBrokerStatus() {
+                    try {
+                        const res = await fetch('/api/broker/status', { credentials: 'include' });
+                        const data = await res.json();
+                        
+                        const statusText = document.getElementById('broker-status-text');
+                        const statusBadge = document.getElementById('broker-connection-status');
+                        const connectBtn = document.getElementById('btn-connect-broker');
+                        const testBtnTop = document.getElementById('btn-test-broker-top');
+
+                        if (data.is_connected) {
+                            if (statusText) statusText.textContent = 'Connected ✓';
+                            if (statusBadge) {
+                                statusBadge.textContent = 'Connected';
+                                statusBadge.style.background = '#48bb78';
+                            }
+                            if (connectBtn) {
+                                connectBtn.style.background = 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)';
+                            }
+                            // Show test button when connected
+                            if (testBtnTop) testBtnTop.style.display = 'inline-block';
+                        } else {
+                            if (statusText) statusText.textContent = 'Connect Broker';
+                            if (statusBadge) {
+                                statusBadge.textContent = 'Disconnected';
+                                statusBadge.style.background = '#e53e3e';
+                            }
+                            if (connectBtn) {
+                                connectBtn.style.background = 'linear-gradient(135deg, #00ff9d 0%, #00d4aa 100%)';
+                            }
+                            // Hide test button when disconnected
+                            if (testBtnTop) testBtnTop.style.display = 'none';
+                        }
+
+                        return data;
+                    } catch (err) {
+                        console.error('Failed to check broker status:', err);
+                        return { is_connected: false, has_credentials: false };
+                    }
+                }
+
+                async function disconnectBroker() {
+                    try {
+                        await fetch('/api/broker/disconnect', { method: 'POST', credentials: 'include' });
+                        checkBrokerStatus();
+                    } catch (err) {
+                        console.error('Disconnect error:', err);
+                    }
+                }
+
+                async function loadBrokerCredentials() {
+                    try {
+                        const res = await fetch('/api/broker/credentials', { credentials: 'include' });
+                        const data = await res.json();
+                        
+                        if (data.client_id) {
+                            document.getElementById('broker-client-id').value = data.client_id;
+                        }
+                        // Show masked values to indicate credentials are saved
+                        if (data.api_key) {
+                            document.getElementById('broker-api-key').placeholder = data.api_key + ' (saved)';
+                        }
+                        if (data.pin) {
+                            document.getElementById('broker-pin').placeholder = data.pin + ' (saved)';
+                        }
+                    } catch (err) {
+                        console.error('Failed to load credentials:', err);
+                    }
+                }
+
+                // Check status every 30 seconds
+                setInterval(checkBrokerStatus, 30000);
+
+                // ==================== CHART INITIALIZATION ====================
+                
+                // Chart variables
+                let chart = null;
+                let candleSeries = null;
+                let chartInitialized = false;
+                let currentChartSymbol = 'RELIANCE';
+
+                function initChart() {
+                    const container = document.getElementById('tradingview_b8265');
+                    if (!container) {
+                        console.error('Chart container not found');
+                        return;
+                    }
+                    
+                    // Check if LightweightCharts is loaded
+                    if (typeof LightweightCharts === 'undefined') {
+                        console.error('LightweightCharts library not loaded');
+                        return;
+                    }
+                    
+                    // Clear existing chart
+                    container.innerHTML = '';
+                    
+                    try {
+                        chart = LightweightCharts.createChart(container, {
+                            width: container.clientWidth || 600,
+                            height: 300,
+                            layout: {
+                                background: { type: 'solid', color: 'transparent' },
+                                textColor: '#d1d4dc',
+                            },
+                            grid: {
+                                vertLines: { color: 'rgba(42, 46, 57, 0.5)' },
+                                horzLines: { color: 'rgba(42, 46, 57, 0.5)' },
+                            },
+                            crosshair: {
+                                mode: LightweightCharts.CrosshairMode.Normal,
+                            },
+                            rightPriceScale: {
+                                borderColor: 'rgba(197, 203, 206, 0.4)',
+                            },
+                            timeScale: {
+                                borderColor: 'rgba(197, 203, 206, 0.4)',
+                                timeVisible: true,
+                                secondsVisible: false,
+                            },
+                        });
+
+                        candleSeries = chart.addCandlestickSeries({
+                            upColor: '#26a69a',
+                            downColor: '#ef5350',
+                            borderDownColor: '#ef5350',
+                            borderUpColor: '#26a69a',
+                            wickDownColor: '#ef5350',
+                            wickUpColor: '#26a69a',
+                        });
+
+                        // Handle resize
+                        window.addEventListener('resize', () => {
+                            if (chart && container) {
+                                chart.applyOptions({ width: container.clientWidth });
+                            }
+                        });
+
+                        chartInitialized = true;
+                        console.log('📊 Chart created successfully');
+                    } catch (e) {
+                        console.error('Chart creation error:', e);
+                    }
+                }
+
+                async function loadChartData(symbol) {
+                    if (!symbol) return;
+                    currentChartSymbol = symbol;
+                    
+                    if (!chartInitialized) {
+                        initChart();
+                    }
+                    
+                    if (!candleSeries) {
+                        console.error('Candle series not initialized');
+                        loadDemoData(symbol);
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`/api/chart/candles?symbol=${symbol}&interval=5m&limit=100`, {
+                            credentials: 'include'
+                        });
+                        
+                        if (response.ok) {
+                            const data = await response.json();
+                            console.log('📊 Chart data received:', data.candles?.length || 0, 'candles');
+                            if (data && data.candles && data.candles.length > 0) {
+                                candleSeries.setData(data.candles);
+                                chart.timeScale().fitContent();
+                            } else {
+                                loadDemoData(symbol);
+                            }
+                        } else {
+                            console.log('📊 API error, using demo data');
+                            loadDemoData(symbol);
+                        }
+                    } catch (error) {
+                        console.log('📊 Fetch error, using demo data:', error);
+                        loadDemoData(symbol);
+                    }
+                }
+
+                function loadDemoData(symbol) {
+                    if (!candleSeries) return;
+                    
+                    const now = Math.floor(Date.now() / 1000);
+                    const interval = 5 * 60;
+                    const basePrice = symbol === 'RELIANCE' ? 2500 : 
+                                     symbol === 'TCS' ? 4000 : 
+                                     symbol === 'INFY' ? 1800 : 
+                                     symbol === 'HDFCBANK' ? 1600 : 1000;
+                    
+                    const demoData = [];
+                    let price = basePrice;
+                    
+                    for (let i = 100; i >= 0; i--) {
+                        const time = now - (i * interval);
+                        const change = (Math.random() - 0.5) * basePrice * 0.01;
+                        const open = price;
+                        const close = price + change;
+                        const high = Math.max(open, close) + Math.random() * basePrice * 0.005;
+                        const low = Math.min(open, close) - Math.random() * basePrice * 0.005;
+                        
+                        demoData.push({
+                            time: time,
+                            open: parseFloat(open.toFixed(2)),
+                            high: parseFloat(high.toFixed(2)),
+                            low: parseFloat(low.toFixed(2)),
+                            close: parseFloat(close.toFixed(2))
+                        });
+                        
+                        price = close;
+                    }
+                    
+                    candleSeries.setData(demoData);
+                    chart.timeScale().fitContent();
+                    console.log('📊 Demo data loaded for', symbol);
+                }
+
+                // Global function for external calls
+                window.loadTradingViewChart = function(symbol) {
+                    loadChartData(symbol);
+                };
+
+                // Initialize chart after a delay to ensure DOM is ready
+                setTimeout(() => {
+                    console.log('📊 Initializing chart...');
+                    
+                    // Populate symbol selector with default symbols
+                    const selector = document.getElementById('symbol-selector');
+                    if (selector) {
+                        if (selector.options.length <= 1 || selector.options[0].disabled) {
+                            const defaultSymbols = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK'];
+                            selector.innerHTML = defaultSymbols.map(s => `<option value="${s}">${s}</option>`).join('');
+                        }
+                        
+                        // Add change listener
+                        selector.addEventListener('change', function(e) {
+                            if (e.target.value) {
+                                loadChartData(e.target.value);
+                            }
+                        });
+                    }
+                    
+                    initChart();
+                    loadChartData('RELIANCE');
+                }, 1000);
             });
         })();
     </script>

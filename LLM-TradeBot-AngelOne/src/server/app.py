@@ -5,8 +5,17 @@ from fastapi.middleware.cors import CORSMiddleware
 import os
 import secrets
 from typing import Optional, Dict
+from loguru import logger as log
 
 from src.server.state import global_state
+from src.server.database import (
+    init_database, get_user, save_broker_credentials, 
+    save_broker_token, clear_broker_token, get_broker_credentials,
+    save_setting, get_setting, save_llm_settings, get_llm_settings, load_llm_settings_to_env
+)
+
+# Load LLM settings from database on startup
+load_llm_settings_to_env()
 
 # Input Model
 from pydantic import BaseModel
@@ -16,6 +25,14 @@ class ControlCommand(BaseModel):
 
 class LoginRequest(BaseModel):
     password: str
+
+class BrokerCredentials(BaseModel):
+    client_id: str
+    api_key: str
+    pin: str
+
+class BrokerConnect(BaseModel):
+    totp: str
 
 from fastapi import UploadFile, File
 import shutil
@@ -126,6 +143,569 @@ async def check_auth_status(request: Request):
     except HTTPException:
         return {"status": "unauthenticated"}
 
+# Chart Data API for Lightweight Charts
+@app.get("/api/chart/candles")
+async def get_chart_candles(
+    symbol: str = "RELIANCE",
+    interval: str = "5m",
+    limit: int = 100,
+    authenticated: bool = Depends(verify_auth)
+):
+    """
+    Get candlestick data for chart display
+    Returns data in Lightweight Charts format
+    """
+    import time
+    import random
+    
+    try:
+        # Try to get real data from broker client if connected
+        if _broker_client and _broker_client.is_connected:
+            try:
+                log.info(f"📊 Fetching real data for {symbol} from broker...")
+                candles = _broker_client.get_klines(
+                    symbol=symbol,
+                    interval=interval,
+                    limit=limit
+                )
+                if candles and len(candles) > 0:
+                    # Convert to Lightweight Charts format
+                    chart_data = []
+                    for c in candles:
+                        chart_data.append({
+                            'time': int(c.get('timestamp', c.get('time', 0)) / 1000),
+                            'open': float(c.get('open', 0)),
+                            'high': float(c.get('high', 0)),
+                            'low': float(c.get('low', 0)),
+                            'close': float(c.get('close', 0))
+                        })
+                    log.info(f"📊 Returning {len(chart_data)} real candles for {symbol}")
+                    global_state.add_log(f"📊 Chart: {len(chart_data)} candles for {symbol}")
+                    return {'candles': chart_data, 'symbol': symbol, 'source': 'angelone'}
+                else:
+                    log.info(f"📊 No real data from broker, falling back to demo for {symbol}")
+            except Exception as e:
+                log.warning(f"Failed to get real candle data: {e}, using demo data")
+                global_state.add_log(f"⚠️ Chart data error: {e}")
+        
+        # Generate demo data if no real data available
+        log.info(f"📊 Generating demo data for {symbol}")
+        now = int(time.time())
+        interval_seconds = 5 * 60  # 5 minutes default
+        
+        # Base prices for different symbols
+        base_prices = {
+            'RELIANCE': 2500,
+            'TCS': 4000,
+            'INFY': 1800,
+            'HDFCBANK': 1600,
+            'ICICIBANK': 1100,
+            'SBIN': 800,
+            'BHARTIARTL': 1500,
+            'ITC': 450,
+            'KOTAKBANK': 1800,
+            'AXISBANK': 1100,
+        }
+        
+        base_price = base_prices.get(symbol.upper(), 1000)
+        price = base_price
+        
+        chart_data = []
+        for i in range(limit, 0, -1):
+            candle_time = now - (i * interval_seconds)
+            change = (random.random() - 0.5) * base_price * 0.01
+            open_price = price
+            close_price = price + change
+            high_price = max(open_price, close_price) + random.random() * base_price * 0.005
+            low_price = min(open_price, close_price) - random.random() * base_price * 0.005
+            
+            chart_data.append({
+                'time': candle_time,
+                'open': round(open_price, 2),
+                'high': round(high_price, 2),
+                'low': round(low_price, 2),
+                'close': round(close_price, 2)
+            })
+            
+            price = close_price
+        
+        return {'candles': chart_data, 'symbol': symbol, 'demo': True}
+        
+    except Exception as e:
+        log.error(f"Chart data error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# ==================== Broker Connection APIs ====================
+
+# Global broker client
+_broker_client = None
+
+@app.get("/api/broker/status")
+async def get_broker_status(authenticated: bool = Depends(verify_auth)):
+    """Get broker connection status"""
+    creds = get_broker_credentials()
+    return {
+        'is_connected': creds.get('is_connected', False) if creds else False,
+        'has_credentials': bool(creds and creds.get('client_id')),
+        'client_id': creds.get('client_id', '') if creds else ''
+    }
+
+@app.post("/api/broker/credentials")
+async def save_credentials(data: BrokerCredentials, authenticated: bool = Depends(verify_auth)):
+    """Save broker credentials (Client ID, API Key, PIN)"""
+    try:
+        success = save_broker_credentials(
+            client_id=data.client_id,
+            api_key=data.api_key,
+            pin=data.pin
+        )
+        if success:
+            return {'status': 'success', 'message': 'Credentials saved successfully'}
+        else:
+            raise HTTPException(status_code=500, detail='Failed to save credentials')
+    except Exception as e:
+        log.error(f"Save credentials error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/broker/credentials")
+async def get_credentials(authenticated: bool = Depends(verify_auth)):
+    """Get saved broker credentials and token status"""
+    creds = get_broker_credentials()
+    if creds:
+        return {
+            'client_id': creds.get('client_id', ''),
+            'api_key': '****' + creds.get('api_key', '')[-4:] if creds.get('api_key') else '',
+            'pin': '****' if creds.get('pin') else '',
+            'is_connected': creds.get('is_connected', False),
+            'has_jwt_token': bool(creds.get('broker_token')),
+            'has_refresh_token': bool(creds.get('refresh_token')),
+            'has_feed_token': bool(creds.get('feed_token')),
+            'token_expiry': creds.get('token_expiry', '')
+        }
+    return {'client_id': '', 'api_key': '', 'pin': '', 'is_connected': False}
+
+# ==================== LLM Settings APIs ====================
+
+class LLMSettings(BaseModel):
+    llm_provider: str
+    api_key: str
+
+@app.get("/api/llm/settings")
+async def get_llm_settings_endpoint(authenticated: bool = Depends(verify_auth)):
+    """Get saved LLM settings"""
+    settings = get_llm_settings()
+    if settings:
+        # Mask API keys for security
+        def mask_key(key):
+            if not key or len(key) < 8:
+                return ''
+            return f"{key[:4]}...{key[-4:]}"
+        
+        return {
+            'llm_provider': settings.get('llm_provider', 'deepseek'),
+            'deepseek_api_key': mask_key(settings.get('deepseek_api_key', '')),
+            'openai_api_key': mask_key(settings.get('openai_api_key', '')),
+            'claude_api_key': mask_key(settings.get('claude_api_key', '')),
+            'qwen_api_key': mask_key(settings.get('qwen_api_key', '')),
+            'gemini_api_key': mask_key(settings.get('gemini_api_key', ''))
+        }
+    return {'llm_provider': 'deepseek'}
+
+@app.post("/api/llm/settings")
+async def save_llm_settings_endpoint(data: LLMSettings, authenticated: bool = Depends(verify_auth)):
+    """Save LLM provider and API key"""
+    try:
+        success = save_llm_settings(
+            llm_provider=data.llm_provider,
+            api_key=data.api_key
+        )
+        if success:
+            # Reload config from database
+            try:
+                from src.config import config
+                config.reload_from_database()
+                log.info("Config reloaded from database")
+            except Exception as e:
+                log.warning(f"Could not reload config: {e}")
+            
+            global_state.add_log(f"🤖 LLM settings saved: {data.llm_provider}")
+            return {'status': 'success', 'message': f'LLM settings saved ({data.llm_provider}). Restart recommended for full effect.'}
+        else:
+            raise HTTPException(status_code=500, detail='Failed to save LLM settings')
+    except Exception as e:
+        log.error(f"Save LLM settings error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+# AngelOne API Wrapper - Direct REST API (NO SDK)
+class BrokerClientWrapper:
+    """AngelOne API wrapper using direct REST API calls only"""
+    def __init__(self, unused, client_code: str, api_key: str, auth_token: str = None):
+        self._client_code = client_code
+        self._api_key = api_key
+        self._auth_token = auth_token  # JWT token for direct API calls
+        self._connected = True
+        global_state.add_log(f"🔧 BrokerClientWrapper initialized for {client_code}")
+    
+    @property
+    def is_connected(self):
+        return self._connected
+    
+    @property
+    def client_code(self):
+        return self._client_code
+    
+    def _get_api_response(self, endpoint: str, method: str = "GET", payload: dict = None):
+        """Make direct API call to AngelOne"""
+        import requests
+        
+        # JWT token - AngelOne returns with "Bearer " prefix
+        auth_token = self._auth_token
+        if auth_token and not auth_token.startswith('Bearer '):
+            auth_token = f'Bearer {auth_token}'
+        
+        headers = {
+            'Authorization': auth_token,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-UserType': 'USER',
+            'X-SourceID': 'WEB',
+            'X-ClientLocalIP': '127.0.0.1',
+            'X-ClientPublicIP': '127.0.0.1',
+            'X-MACAddress': '00:00:00:00:00:00',
+            'X-PrivateKey': self._api_key
+        }
+        
+        url = f"https://apiconnect.angelone.in{endpoint}"
+        
+        # Debug log
+        log.info(f"API Call: {method} {endpoint}")
+        log.info(f"API Key: {self._api_key}")
+        log.info(f"Token (first 50): {auth_token[:50] if auth_token else 'None'}...")
+        
+        try:
+            if method == "GET":
+                response = requests.get(url, headers=headers, timeout=30)
+            else:
+                response = requests.post(url, headers=headers, json=payload, timeout=30)
+            
+            result = response.json()
+            log.info(f"API Response: {result.get('status')}, {result.get('message')}")
+            return result
+            
+            return response.json()
+        except Exception as e:
+            log.error(f"API call failed: {e}")
+            global_state.add_log(f"❌ API call failed: {e}")
+            return None
+    
+    def get_klines(self, symbol: str, interval: str = '5m', limit: int = 100, **kwargs):
+        """Get historical candle data using direct REST API"""
+        from datetime import datetime, timedelta
+        
+        interval_map = {
+            '1m': 'ONE_MINUTE', '3m': 'THREE_MINUTE', '5m': 'FIVE_MINUTE',
+            '10m': 'TEN_MINUTE', '15m': 'FIFTEEN_MINUTE', '30m': 'THIRTY_MINUTE', 
+            '1h': 'ONE_HOUR', '1d': 'ONE_DAY'
+        }
+        ao_interval = interval_map.get(interval, 'FIVE_MINUTE')
+        
+        symbol_tokens = {
+            # Nifty 50 Stocks
+            'RELIANCE': '2885', 'TCS': '11536', 'INFY': '1594', 'HDFCBANK': '1333',
+            'ICICIBANK': '4963', 'SBIN': '3045', 'BHARTIARTL': '10604', 'ITC': '1660',
+            'KOTAKBANK': '1922', 'AXISBANK': '5900', 'HINDUNILVR': '1394', 'LT': '11483',
+            'BAJFINANCE': '317', 'MARUTI': '10999', 'ASIANPAINT': '236', 'TITAN': '3506',
+            'SUNPHARMA': '3351', 'WIPRO': '3787', 'HCLTECH': '7229', 'ULTRACEMCO': '11532',
+            'TATAMOTORS': '3456', 'TATASTEEL': '3499', 'POWERGRID': '14977', 'NTPC': '11630',
+            'ONGC': '2083', 'COALINDIA': '20374', 'JSWSTEEL': '11723', 'ADANIENT': '25', 
+            'ADANIPORTS': '15083', 'TECHM': '13538', 'BAJAJFINSV': '16675', 'NESTLEIND': '17963',
+            'DRREDDY': '881', 'CIPLA': '694', 'DIVISLAB': '10940', 'APOLLOHOSP': '157',
+            'EICHERMOT': '910', 'HEROMOTOCO': '1348', 'BPCL': '526', 'GRASIM': '1232',
+            'BRITANNIA': '547', 'HINDALCO': '1363', 'INDUSINDBK': '5258', 'TATACONSUM': '3432',
+            'M&M': '2031', 'SBILIFE': '21808', 'HDFCLIFE': '467', 'UPL': '11287',
+            # Indices
+            'NIFTY': '99926000', 'BANKNIFTY': '99926009', 'NIFTYIT': '99926013'
+        }
+        
+        clean_symbol = symbol.upper().replace('-EQ', '').replace('NSE:', '')
+        token = symbol_tokens.get(clean_symbol, '2885')
+        
+        to_date = datetime.now()
+        from_date = to_date - timedelta(days=7)
+        
+        global_state.add_log(f"📊 Fetching {clean_symbol} data...")
+        
+        try:
+            payload = {
+                "exchange": "NSE",
+                "symboltoken": token,
+                "interval": ao_interval,
+                "fromdate": from_date.strftime("%Y-%m-%d %H:%M"),
+                "todate": to_date.strftime("%Y-%m-%d %H:%M")
+            }
+            
+            response = self._get_api_response("/rest/secure/angelbroking/historical/v1/getCandleData", "POST", payload)
+            
+            if response and response.get('status') and response.get('data'):
+                candles = []
+                for c in response['data']:
+                    try:
+                        ts = c[0]
+                        if isinstance(ts, str):
+                            if 'T' in ts:
+                                ts = datetime.strptime(ts.split('+')[0], "%Y-%m-%dT%H:%M:%S")
+                            else:
+                                ts = datetime.strptime(ts, "%Y-%m-%d %H:%M:%S")
+                            ts = int(ts.timestamp() * 1000)
+                        
+                        candles.append({
+                            'timestamp': ts,
+                            'open': float(c[1]),
+                            'high': float(c[2]),
+                            'low': float(c[3]),
+                            'close': float(c[4]),
+                            'volume': float(c[5]) if len(c) > 5 else 0
+                        })
+                    except Exception as parse_err:
+                        log.warning(f"Failed to parse candle: {c}, error: {parse_err}")
+                
+                global_state.add_log(f"✅ Fetched {len(candles)} candles for {clean_symbol}")
+                return candles
+            else:
+                error_msg = response.get('message', 'Unknown') if response else 'No response'
+                global_state.add_log(f"⚠️ {clean_symbol} error: {error_msg}")
+                return []
+                
+        except Exception as e:
+            global_state.add_log(f"❌ Failed to fetch {clean_symbol}: {str(e)}")
+            return []
+    
+    def get_ticker_price(self, symbol: str, **kwargs):
+        """Get current price using direct REST API"""
+        import time
+        
+        symbol_tokens = {
+            # Nifty 50 Stocks
+            'RELIANCE': '2885', 'TCS': '11536', 'INFY': '1594', 'HDFCBANK': '1333',
+            'ICICIBANK': '4963', 'SBIN': '3045', 'BHARTIARTL': '10604', 'ITC': '1660',
+            'KOTAKBANK': '1922', 'AXISBANK': '5900', 'HINDUNILVR': '1394', 'LT': '11483',
+            'BAJFINANCE': '317', 'MARUTI': '10999', 'ASIANPAINT': '236', 'TITAN': '3506',
+            'SUNPHARMA': '3351', 'WIPRO': '3787', 'HCLTECH': '7229', 'ULTRACEMCO': '11532',
+            'TATAMOTORS': '3456', 'TATASTEEL': '3499', 'POWERGRID': '14977', 'NTPC': '11630',
+            'ONGC': '2083', 'COALINDIA': '20374', 'JSWSTEEL': '11723', 'ADANIENT': '25', 
+            'ADANIPORTS': '15083', 'TECHM': '13538'
+        }
+        clean_symbol = symbol.upper().replace('-EQ', '').replace('NSE:', '')
+        token = symbol_tokens.get(clean_symbol, '2885')
+        
+        try:
+            payload = {"mode": "LTP", "exchangeTokens": {"NSE": [token]}}
+            response = self._get_api_response("/rest/secure/angelbroking/market/v1/quote/", "POST", payload)
+            
+            if response and response.get('status') and response.get('data'):
+                fetched = response['data'].get('fetched', [])
+                if fetched:
+                    price = float(fetched[0].get('ltp', 0))
+                    return {'symbol': symbol, 'price': price, 'time': int(time.time() * 1000)}
+        except Exception as e:
+            log.warning(f"Failed to get ticker: {e}")
+        
+        return {'symbol': symbol, 'price': 0.0, 'time': 0}
+    
+    def get_account(self):
+        """Get account info using direct REST API"""
+        try:
+            response = self._get_api_response("/rest/secure/angelbroking/user/v1/getRMS", "GET")
+            
+            if response and response.get('status') and response.get('data'):
+                data = response['data']
+                net = float(data.get('net', 0) or data.get('availablecash', 0) or 0)
+                available = float(data.get('availablecash', 0) or data.get('net', 0) or 0)
+                global_state.add_log(f"💰 Account: Net ₹{net:.2f}, Available ₹{available:.2f}")
+                return {'totalBalance': net, 'availableBalance': available, 'totalUnrealizedProfit': 0.0}
+            else:
+                error_msg = response.get('message', 'Unknown') if response else 'No response'
+                global_state.add_log(f"⚠️ RMS error: {error_msg}")
+        except Exception as e:
+            global_state.add_log(f"⚠️ Account fetch error: {e}")
+        
+        return {'totalBalance': 0.0, 'availableBalance': 0.0, 'totalUnrealizedProfit': 0.0}
+    
+    def disconnect(self):
+        """Disconnect"""
+        try:
+            self._get_api_response("/rest/secure/angelbroking/user/v1/logout", "POST", {})
+            global_state.add_log(f"🔌 Disconnected from AngelOne")
+        except:
+            pass
+        self._connected = False
+
+@app.post("/api/broker/connect")
+async def connect_broker(data: BrokerConnect, authenticated: bool = Depends(verify_auth)):
+    """Connect to broker using TOTP code (6-digit) - Direct REST API"""
+    global _broker_client
+    import requests
+    
+    try:
+        creds = get_broker_credentials()
+        if not creds or not creds.get('client_id'):
+            global_state.add_log("❌ No credentials saved. Please save credentials first.")
+            raise HTTPException(status_code=400, detail='No credentials saved. Please save credentials first.')
+        
+        totp_code = data.totp.strip()
+        
+        global_state.add_log(f"🔐 Attempting AngelOne login for client: {creds['client_id']}")
+        log.info(f"Attempting AngelOne login for client: {creds['client_id']}")
+        
+        # Direct REST API login (no SDK)
+        login_url = "https://apiconnect.angelone.in/rest/auth/angelbroking/user/v1/loginByPassword"
+        login_payload = {
+            "clientcode": creds['client_id'],
+            "password": creds['pin'],
+            "totp": totp_code
+        }
+        login_headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'X-UserType': 'USER',
+            'X-SourceID': 'WEB',
+            'X-ClientLocalIP': '127.0.0.1',
+            'X-ClientPublicIP': '127.0.0.1',
+            'X-MACAddress': '00:00:00:00:00:00',
+            'X-PrivateKey': creds['api_key']
+        }
+        
+        resp = requests.post(login_url, json=login_payload, headers=login_headers, timeout=30)
+        response = resp.json()
+        
+        log.info(f"Login response status: {response.get('status')}, message: {response.get('message')}")
+        
+        if response and response.get('status') and response.get('data'):
+            session_data = response['data']
+            jwt_token = session_data.get('jwtToken', '')
+            refresh_token = session_data.get('refreshToken', '')
+            feed_token = session_data.get('feedToken', '')
+            
+            # Save all tokens to database
+            save_broker_token(
+                token=jwt_token,
+                refresh_token=refresh_token,
+                feed_token=feed_token,
+                expiry=None  # AngelOne tokens expire at end of day
+            )
+            
+            global_state.add_log(f"✅ Broker connected successfully! Client: {creds['client_id']}")
+            global_state.add_log(f"🔑 JWT: {'✓' if jwt_token else '✗'} | Refresh: {'✓' if refresh_token else '✗'} | Feed: {'✓' if feed_token else '✗'}")
+            log.info(f"Tokens saved - JWT length: {len(jwt_token)}")
+            
+            # Create wrapper with auth token for direct API calls
+            wrapper = BrokerClientWrapper(None, creds['client_id'], creds['api_key'], jwt_token)
+            _broker_client = wrapper
+            global_state.exchange_client = wrapper
+            
+            log.info(f"AngelOne login successful for {creds['client_id']}")
+            
+            return {
+                'status': 'success',
+                'message': 'Connected to AngelOne successfully',
+                'client_id': creds['client_id'],
+                'has_jwt': bool(jwt_token),
+                'has_refresh': bool(refresh_token),
+                'has_feed': bool(feed_token)
+            }
+        else:
+            error_msg = response.get('message', 'Login failed') if response else 'No response from AngelOne'
+            global_state.add_log(f"❌ AngelOne login failed: {error_msg}")
+            log.error(f"AngelOne login failed: {error_msg}")
+            raise HTTPException(status_code=401, detail=error_msg)
+            
+    except HTTPException:
+        raise
+    except Exception as e:
+        global_state.add_log(f"❌ Broker connect error: {str(e)}")
+        log.error(f"Broker connect error: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/broker/disconnect")
+async def disconnect_broker(authenticated: bool = Depends(verify_auth)):
+    """Disconnect from broker"""
+    global _broker_client
+    
+    try:
+        if _broker_client:
+            _broker_client.disconnect()
+            _broker_client = None
+        
+        global_state.exchange_client = None
+        clear_broker_token()
+        
+        global_state.add_log("🔌 Broker disconnected")
+        return {'status': 'success', 'message': 'Disconnected from broker'}
+    except Exception as e:
+        log.error(f"Broker disconnect error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/broker/test")
+async def test_broker_connection(authenticated: bool = Depends(verify_auth)):
+    """Test broker connection by fetching data"""
+    global _broker_client
+    
+    results = {
+        'connected': False,
+        'account': None,
+        'ltp': None,
+        'historical': None,
+        'errors': []
+    }
+    
+    if not _broker_client:
+        results['errors'].append("Broker not connected")
+        global_state.add_log("⚠️ Test failed: Broker not connected")
+        return results
+    
+    results['connected'] = True
+    global_state.add_log("🧪 Testing broker connection...")
+    
+    # Test 1: Get account info
+    try:
+        account = _broker_client.get_account()
+        results['account'] = account
+        global_state.add_log(f"✅ Account test: Net ₹{account.get('totalBalance', 0):.2f}")
+    except Exception as e:
+        results['errors'].append(f"Account error: {str(e)}")
+        global_state.add_log(f"❌ Account test failed: {e}")
+    
+    # Test 2: Get LTP
+    try:
+        ltp = _broker_client.get_ticker_price("RELIANCE")
+        results['ltp'] = ltp
+        if ltp.get('price', 0) > 0:
+            global_state.add_log(f"✅ LTP test: RELIANCE ₹{ltp.get('price', 0):.2f}")
+        else:
+            global_state.add_log(f"⚠️ LTP test: No price data")
+    except Exception as e:
+        results['errors'].append(f"LTP error: {str(e)}")
+        global_state.add_log(f"❌ LTP test failed: {e}")
+    
+    # Test 3: Get historical data
+    try:
+        candles = _broker_client.get_klines("RELIANCE", "5m", 10)
+        results['historical'] = {
+            'count': len(candles) if candles else 0,
+            'sample': candles[0] if candles else None
+        }
+        if candles and len(candles) > 0:
+            global_state.add_log(f"✅ Historical test: {len(candles)} candles fetched")
+        else:
+            global_state.add_log(f"⚠️ Historical test: No candle data")
+    except Exception as e:
+        results['errors'].append(f"Historical error: {str(e)}")
+        global_state.add_log(f"❌ Historical test failed: {e}")
+    
+    return results
+
 # API Endpoints
 @app.get("/api/status")
 async def get_status(authenticated: bool = Depends(verify_auth)):
@@ -146,6 +726,27 @@ async def get_status(authenticated: bool = Depends(verify_auth)):
         elapsed = time.time() - global_state.demo_start_time
         demo_time_remaining = max(0, global_state.demo_limit_seconds - elapsed)
     
+    # Fetch real account data if broker is connected
+    account_data = global_state.account_overview.copy()
+    broker_connected = False
+    
+    if _broker_client and _broker_client.is_connected:
+        broker_connected = True
+        try:
+            real_account = _broker_client.get_account()
+            if real_account:
+                account_data = {
+                    "total_equity": real_account.get('totalBalance', 0),
+                    "available_balance": real_account.get('availableBalance', 0),
+                    "wallet_balance": real_account.get('totalBalance', 0),
+                    "total_pnl": real_account.get('totalUnrealizedProfit', 0),
+                    "is_real": True  # Flag to indicate real broker data
+                }
+                # Update global state too
+                global_state.account_overview = account_data
+        except Exception as e:
+            log.warning(f"Failed to fetch real account data: {e}")
+    
     data = {
         "system": {
             "running": global_state.is_running,
@@ -163,6 +764,10 @@ async def get_status(authenticated: bool = Depends(verify_auth)):
             "demo_expired": global_state.demo_expired,
             "demo_time_remaining": int(demo_time_remaining)
         },
+        "broker": {
+            "connected": broker_connected,
+            "client_id": _broker_client.client_code if _broker_client else None
+        },
         "market": {
             "price": global_state.current_price,
             "regime": global_state.market_regime,
@@ -172,7 +777,7 @@ async def get_status(authenticated: bool = Depends(verify_auth)):
             "critic_confidence": global_state.critic_confidence,
             "guardian_status": global_state.guardian_status
         },
-        "account": global_state.account_overview,
+        "account": account_data,
         "virtual_account": {
             "is_test_mode": global_state.is_test_mode,
             "initial_balance": global_state.virtual_initial_balance,

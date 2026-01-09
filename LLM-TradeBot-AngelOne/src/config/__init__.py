@@ -10,6 +10,38 @@ from dotenv import load_dotenv
 # Load environment variables (use override=True to ensure .env settings override current process environment variables)
 load_dotenv(override=True)
 
+# Load LLM settings from database to environment
+def _load_llm_from_database():
+    """Load LLM API keys from database into environment variables"""
+    try:
+        from src.server.database import get_llm_settings
+        settings = get_llm_settings()
+        if settings:
+            provider = settings.get('llm_provider', 'deepseek')
+            os.environ['LLM_PROVIDER'] = provider
+            
+            # Load all API keys to environment
+            key_map = {
+                'deepseek_api_key': 'DEEPSEEK_API_KEY',
+                'openai_api_key': 'OPENAI_API_KEY',
+                'claude_api_key': 'CLAUDE_API_KEY',
+                'qwen_api_key': 'QWEN_API_KEY',
+                'gemini_api_key': 'GEMINI_API_KEY'
+            }
+            
+            for db_key, env_key in key_map.items():
+                if settings.get(db_key):
+                    os.environ[env_key] = settings[db_key]
+            
+            print(f"✅ LLM settings loaded from database: provider={provider}")
+            return True
+    except Exception as e:
+        print(f"⚠️ Could not load LLM settings from database: {e}")
+    return False
+
+# Try to load from database on module import
+_load_llm_from_database()
+
 
 class Config:
     """Configuration Management Class"""
@@ -127,6 +159,13 @@ class Config:
     @property
     def llm(self):
         return self._config.get('llm', {})
+    
+    def reload_from_database(self):
+        """Reload LLM settings from database"""
+        if _load_llm_from_database():
+            self._override_from_env()
+            return True
+        return False
 
 
 # Global configuration instance

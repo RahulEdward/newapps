@@ -156,10 +156,9 @@ async def get_chart_candles(
     Returns data in Lightweight Charts format
     """
     import time
-    import random
     
     try:
-        # Try to get real data from broker client if connected
+        # Only get real data from broker client if connected
         if _broker_client and _broker_client.is_connected:
             try:
                 log.info(f"📊 Fetching real data for {symbol} from broker...")
@@ -183,53 +182,15 @@ async def get_chart_candles(
                     global_state.add_log(f"📊 Chart: {len(chart_data)} candles for {symbol}")
                     return {'candles': chart_data, 'symbol': symbol, 'source': 'angelone'}
                 else:
-                    log.info(f"📊 No real data from broker, falling back to demo for {symbol}")
+                    log.warning(f"📊 No data returned for {symbol}")
+                    return {'candles': [], 'symbol': symbol, 'error': 'No data available'}
             except Exception as e:
-                log.warning(f"Failed to get real candle data: {e}, using demo data")
+                log.warning(f"Failed to get candle data: {e}")
                 global_state.add_log(f"⚠️ Chart data error: {e}")
-        
-        # Generate demo data if no real data available
-        log.info(f"📊 Generating demo data for {symbol}")
-        now = int(time.time())
-        interval_seconds = 5 * 60  # 5 minutes default
-        
-        # Base prices for different symbols
-        base_prices = {
-            'RELIANCE': 2500,
-            'TCS': 4000,
-            'INFY': 1800,
-            'HDFCBANK': 1600,
-            'ICICIBANK': 1100,
-            'SBIN': 800,
-            'BHARTIARTL': 1500,
-            'ITC': 450,
-            'KOTAKBANK': 1800,
-            'AXISBANK': 1100,
-        }
-        
-        base_price = base_prices.get(symbol.upper(), 1000)
-        price = base_price
-        
-        chart_data = []
-        for i in range(limit, 0, -1):
-            candle_time = now - (i * interval_seconds)
-            change = (random.random() - 0.5) * base_price * 0.01
-            open_price = price
-            close_price = price + change
-            high_price = max(open_price, close_price) + random.random() * base_price * 0.005
-            low_price = min(open_price, close_price) - random.random() * base_price * 0.005
-            
-            chart_data.append({
-                'time': candle_time,
-                'open': round(open_price, 2),
-                'high': round(high_price, 2),
-                'low': round(low_price, 2),
-                'close': round(close_price, 2)
-            })
-            
-            price = close_price
-        
-        return {'candles': chart_data, 'symbol': symbol, 'demo': True}
+                return {'candles': [], 'symbol': symbol, 'error': str(e)}
+        else:
+            # Broker not connected - return empty with message
+            return {'candles': [], 'symbol': symbol, 'error': 'Broker not connected. Please connect to AngelOne first.'}
         
     except Exception as e:
         log.error(f"Chart data error: {e}")

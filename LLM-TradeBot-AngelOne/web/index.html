@@ -1484,13 +1484,19 @@
                 setTimeout(() => {
                     console.log('📊 Initializing chart...');
                     
-                    // Populate symbol selector with default symbols
+                    // Populate symbol selector with all Nifty 50 stocks
                     const selector = document.getElementById('symbol-selector');
                     if (selector) {
-                        if (selector.options.length <= 1 || selector.options[0].disabled) {
-                            const defaultSymbols = ['RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK'];
-                            selector.innerHTML = defaultSymbols.map(s => `<option value="${s}">${s}</option>`).join('');
-                        }
+                        const defaultSymbols = [
+                            'RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK',
+                            'SBIN', 'BHARTIARTL', 'ITC', 'KOTAKBANK', 'AXISBANK',
+                            'HINDUNILVR', 'LT', 'BAJFINANCE', 'MARUTI', 'ASIANPAINT',
+                            'TITAN', 'SUNPHARMA', 'WIPRO', 'HCLTECH', 'ULTRACEMCO',
+                            'TATAMOTORS', 'TATASTEEL', 'POWERGRID', 'NTPC', 'ONGC',
+                            'COALINDIA', 'JSWSTEEL', 'ADANIENT', 'ADANIPORTS', 'TECHM'
+                        ];
+                        selector.innerHTML = defaultSymbols.map(s => `<option value="${s}">${s}</option>`).join('');
+                        console.log('📊 Symbol selector initialized with', defaultSymbols.length, 'stocks');
                         
                         // Add change listener
                         selector.addEventListener('change', function(e) {

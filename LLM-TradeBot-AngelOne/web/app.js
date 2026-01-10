@@ -880,7 +880,7 @@ function updateSymbolSelector(symbols) {
     const selector = document.getElementById('symbol-selector');
     if (!selector) return;
 
-    // Default Indian stocks if no symbols provided
+    // Default Indian stocks - Nifty 50 stocks always available
     const defaultStocks = [
         'RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK',
         'SBIN', 'BHARTIARTL', 'ITC', 'KOTAKBANK', 'AXISBANK',
@@ -890,40 +890,26 @@ function updateSymbolSelector(symbols) {
         'COALINDIA', 'JSWSTEEL', 'ADANIENT', 'ADANIPORTS', 'TECHM'
     ];
 
-    // Use provided symbols or default stocks
-    const stockList = (symbols && symbols.length > 0) ? symbols : defaultStocks;
-
-    // Get current selection
+    // Get current selection before updating
     const currentSymbol = selector.value;
 
     // Store symbols globally for reference
-    window.activeSymbols = stockList;
+    window.activeSymbols = defaultStocks;
 
     // Build new options
-    const options = stockList.map(symbol => {
-        // Format display name for Indian stocks
-        const displayName = symbol;
-        return `<option value="${symbol}">${displayName}</option>`;
+    const options = defaultStocks.map(symbol => {
+        return `<option value="${symbol}">${symbol}</option>`;
     }).join('');
 
-    // Update selector
+    // Always update selector to ensure all stocks are shown
     selector.innerHTML = options;
+    console.log('📊 Symbol selector updated with', defaultStocks.length, 'stocks');
 
-    // Restore previous selection if it still exists
-    if (stockList.includes(currentSymbol)) {
+    // Restore previous selection if it still exists, otherwise default to RELIANCE
+    if (currentSymbol && defaultStocks.includes(currentSymbol)) {
         selector.value = currentSymbol;
-        // Still load chart on first call even if symbol was preserved
-        if (!window.chartSymbolInitialized && typeof loadTradingViewChart === 'function') {
-            loadTradingViewChart(currentSymbol);
-            window.chartSymbolInitialized = true;
-        }
     } else {
-        // Default to first symbol and reload chart
-        selector.value = stockList[0];
-        if (typeof loadTradingViewChart === 'function') {
-            loadTradingViewChart(stockList[0]);
-            window.chartSymbolInitialized = true;
-        }
+        selector.value = 'RELIANCE';
     }
 }
 
@@ -932,14 +918,15 @@ function updateDecisionFilter(symbols) {
     const filterSelector = document.getElementById('filter-symbol');
     if (!filterSelector) return;
 
-    // Default Indian stocks if no symbols provided
+    // Default Indian stocks - Nifty 50 stocks always available
     const defaultStocks = [
         'RELIANCE', 'TCS', 'INFY', 'HDFCBANK', 'ICICIBANK',
-        'SBIN', 'BHARTIARTL', 'ITC', 'KOTAKBANK', 'AXISBANK'
+        'SBIN', 'BHARTIARTL', 'ITC', 'KOTAKBANK', 'AXISBANK',
+        'HINDUNILVR', 'LT', 'BAJFINANCE', 'MARUTI', 'ASIANPAINT',
+        'TITAN', 'SUNPHARMA', 'WIPRO', 'HCLTECH', 'ULTRACEMCO',
+        'TATAMOTORS', 'TATASTEEL', 'POWERGRID', 'NTPC', 'ONGC',
+        'COALINDIA', 'JSWSTEEL', 'ADANIENT', 'ADANIPORTS', 'TECHM'
     ];
-
-    // Use provided symbols or default stocks
-    const stockList = (symbols && symbols.length > 0) ? symbols : defaultStocks;
 
     // Get current selection
     const currentFilter = filterSelector.value;
@@ -947,21 +934,16 @@ function updateDecisionFilter(symbols) {
     // Build new options (always keep "All Symbols" as first option)
     const options = ['<option value="all">All Symbols</option>'];
 
-    stockList.forEach(symbol => {
-        // Format display name for Indian stocks
-        const displayName = symbol;
-        options.push(`<option value="${symbol}">${displayName}</option>`);
+    defaultStocks.forEach(symbol => {
+        options.push(`<option value="${symbol}">${symbol}</option>`);
     });
 
-    // Update selector
+    // Always update selector to ensure all stocks are shown
     filterSelector.innerHTML = options.join('');
 
-    // Restore previous selection if it still exists
-    if (currentFilter === 'all' || symbols.includes(currentFilter)) {
+    // Restore previous selection
+    if (currentFilter) {
         filterSelector.value = currentFilter;
-    } else {
-        // Default to "all"
-        filterSelector.value = 'all';
     }
 }
 
